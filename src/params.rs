@@ -1,6 +1,9 @@
 #[macro_use]
 mod macros;
 
+mod extract;
+use extract::merge;
+
 mod align;
 pub use align::Align;
 
@@ -42,9 +45,6 @@ pub use todo::{TodoClass, TodoParams, TodoStyle};
 
 mod toggle;
 pub use toggle::{ToggleClass, ToggleParams, ToggleStyle};
-
-mod extract;
-pub use extract::{merge, merge_many, Extract};
 
 mod constrained;
 pub use constrained::{Constrained, Constraint};

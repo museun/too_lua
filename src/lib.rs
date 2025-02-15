@@ -12,7 +12,7 @@ mod mapping;
 pub use mapping::{Context, Indirect, Mapping};
 
 mod tree;
-pub(self) use tree::{LuaId, Node, UiBuilder};
+use tree::{LuaId, Node, UiBuilder};
 
 pub use tree::Tree;
 

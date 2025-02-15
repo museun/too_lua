@@ -128,12 +128,12 @@ where
                     if let Err(err) = script.reload(&lua) {
                         errors.handle_lua_error("cannot load", err);
                         return;
-                    } else {
-                        notifications.push(Notification::new(
-                            "loaded new script",
-                            Duration::from_secs(3),
-                        ));
                     }
+
+                    notifications.push(Notification::new(
+                        "loaded new script",
+                        Duration::from_secs(3),
+                    ));
                 }
 
                 if let Err(err) = script.update(&lua) {

@@ -20,7 +20,12 @@ pub struct Context<'a> {
 }
 
 impl<'a> Context<'a> {
-    pub(crate) fn new(lua: &'a mlua::Lua, tree: &'a Tree, current: &'a Node, id: LuaId) -> Self {
+    pub(crate) const fn new(
+        lua: &'a mlua::Lua,
+        tree: &'a Tree,
+        current: &'a Node,
+        id: LuaId,
+    ) -> Self {
         Self {
             lua,
             tree,
@@ -116,7 +121,7 @@ impl Mapping {
     pub fn new() -> Self {
         let s = Self::map_name;
 
-        Mapping {
+        Self {
             map: HashMap::default(),
         }
         .with(s("vertical"), Self::vertical)
@@ -269,11 +274,7 @@ impl Mapping {
             params::Aligned::RightBottom => Align2::RIGHT_BOTTOM,
         };
 
-        ui.aligned(align, |ui| {
-            for &child in &ctx.tree.map[ctx.id].children {
-                self.evaluate(ui, ctx.child(child));
-            }
-        });
+        ui.aligned(align, |ui| ctx.visit_children(self, ui));
     }
 
     fn separator(&self, ui: &Ui, _ctx: Context) {
@@ -344,7 +345,7 @@ impl Mapping {
                 };
                 Some(val)
             })
-            .unwrap_or_else(|| <too::views::LabelStyle as too::view::Style>::default);
+            .unwrap_or(<too::views::LabelStyle as too::view::Style>::default);
 
         let label = if let Some(fg) = fg {
             label.fg(fg)
@@ -480,7 +481,7 @@ impl Mapping {
                 };
                 Some(val)
             })
-            .unwrap_or_else(|| <too::views::TodoStyle as too::view::Style>::default);
+            .unwrap_or(<too::views::TodoStyle as too::view::Style>::default);
 
         let mut attr = None;
         let mut text_color = None;

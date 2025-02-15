@@ -11,7 +11,7 @@ pub trait Extract {
 
 impl Extract for char {
     type R = Option<String>;
-    fn extract(&mut self, right: &Option<String>) {
+    fn extract(&mut self, right: &Self::R) {
         if let Some(right) = right {
             *self = right.chars().nth(0).unwrap_or(' ')
         }
@@ -20,7 +20,7 @@ impl Extract for char {
 
 impl Extract for bool {
     type R = Option<bool>;
-    fn extract(&mut self, right: &Option<bool>) {
+    fn extract(&mut self, right: &Self::R) {
         if let Some(right) = right.filter(|c| *c) {
             *self = right
         }
@@ -29,7 +29,7 @@ impl Extract for bool {
 
 impl Extract for Cow<'static, str> {
     type R = Option<String>;
-    fn extract(&mut self, right: &Option<String>) {
+    fn extract(&mut self, right: &Self::R) {
         if let Some(right) = right {
             *self = right.clone().into()
         }
@@ -38,7 +38,7 @@ impl Extract for Cow<'static, str> {
 
 impl Extract for Rgba {
     type R = Option<Color>;
-    fn extract(&mut self, right: &Option<Color>) {
+    fn extract(&mut self, right: &Self::R) {
         if let Some(right) = right {
             *self = right.0
         }
@@ -47,7 +47,7 @@ impl Extract for Rgba {
 
 impl Extract for Option<Rgba> {
     type R = Option<Color>;
-    fn extract(&mut self, right: &Option<Color>) {
+    fn extract(&mut self, right: &Self::R) {
         if let Some(right) = right {
             *self = Some(right.0)
         }
