@@ -50,3 +50,9 @@ impl mlua::UserData for Value {
         });
     }
 }
+
+impl crate::params::Proxy for Value {
+    fn create(lua: &mlua::Lua) -> mlua::Result<()> {
+        lua.globals().set("Value", lua.create_proxy::<Self>()?)
+    }
+}

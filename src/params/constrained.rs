@@ -1,3 +1,5 @@
+use mlua::ObjectLike;
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Constraint {
     ExactSize { w: u16, h: u16 },
@@ -87,5 +89,12 @@ impl mlua::UserData for Constrained {
             let constraint = Constraint::MinHeight(h);
             Ok(constraint)
         });
+    }
+}
+
+impl crate::params::Proxy for Constrained {
+    fn create(lua: &mlua::Lua) -> mlua::Result<()> {
+        lua.globals()
+            .set("Constrained", lua.create_proxy::<Self>()?)
     }
 }

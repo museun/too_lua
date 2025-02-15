@@ -82,7 +82,7 @@ where
             )
             .unwrap();
 
-        crate::setup_proxies(&lua).unwrap();
+        crate::params::initialize(&lua).unwrap();
 
         // TODO make this fail less hard
         let mut script = match Script::new(self.path, self.timeout, &lua) {
@@ -93,7 +93,7 @@ where
             }
         };
 
-        let mapping = Mapping::new();
+        let mapping = Mapping::default_bindings();
         let debug_mode = self.config.debug;
 
         too::application2(

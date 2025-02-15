@@ -9,7 +9,10 @@ use too::{
     view::{Ui, ViewExt as _},
 };
 
-use crate::{params, LuaId, Node, Tree, Value};
+use crate::{
+    params::{self, Value},
+    LuaId, Node, Tree,
+};
 
 #[derive(Copy, Clone)]
 pub struct Context<'a> {
@@ -113,50 +116,46 @@ impl<'a> Context<'a> {
 
 pub type Indirect = fn(&Mapping, &Ui<'_>, Context<'_>);
 
+#[derive(Default)]
 pub struct Mapping {
     map: HashMap<u64, Indirect, too::helpers::DefaultIntHasher>,
 }
 
 impl Mapping {
-    pub fn new() -> Self {
-        let s = Self::map_name;
+    const DEFAULT_TOO_BINDINGS: &[(u64, Indirect)] = &[
+        (Self::map_name("vertical"), Self::vertical),
+        (Self::map_name("horizontal"), Self::horizontal),
+        (Self::map_name("background"), Self::background),
+        (Self::map_name("margin"), Self::margin),
+        (Self::map_name("separator"), Self::separator),
+        (Self::map_name("expand_axis"), Self::expand_axis),
+        (Self::map_name("label"), Self::label),
+        (Self::map_name("button"), Self::button),
+        (Self::map_name("slider"), Self::slider),
+        (Self::map_name("progress"), Self::progress),
+        (Self::map_name("border"), Self::border),
+        (Self::map_name("frame"), Self::frame),
+        (Self::map_name("checkbox"), Self::checkbox),
+        (Self::map_name("selected"), Self::selected),
+        (Self::map_name("todo"), Self::todo_value),
+        (Self::map_name("toggle"), Self::toggle_switch),
+        (Self::map_name("show"), Self::toggle),
+        (Self::map_name("aligned"), Self::aligned),
+        (Self::map_name("center"), Self::center),
+        (Self::map_name("vertical"), Self::vertical),
+        (Self::map_name("horizontal"), Self::horizontal),
+        (Self::map_name("wrapped"), Self::wrapped),
+        (Self::map_name("flex"), Self::flex),
+        (Self::map_name("fill"), Self::fill),
+        (Self::map_name("constrained"), Self::constrained),
+        (Self::map_name("unconstrained"), Self::unconstrained),
+        (Self::map_name("container"), Self::container),
+    ];
 
-        Self {
-            map: HashMap::default(),
-        }
-        .with(s("vertical"), Self::vertical)
-        .with(s("horizontal"), Self::horizontal)
-        .with(s("background"), Self::background)
-        .with(s("margin"), Self::margin)
-        .with(s("separator"), Self::separator)
-        .with(s("expand_axis"), Self::expand_axis)
-        //
-        .with(s("label"), Self::label)
-        .with(s("button"), Self::button)
-        .with(s("slider"), Self::slider)
-        .with(s("progress"), Self::progress)
-        .with(s("border"), Self::border)
-        .with(s("frame"), Self::frame)
-        //
-        .with(s("checkbox"), Self::checkbox)
-        .with(s("selected"), Self::selected)
-        .with(s("todo"), Self::todo_value)
-        .with(s("toggle"), Self::toggle_switch)
-        .with(s("show"), Self::toggle)
-        //
-        .with(s("aligned"), Self::aligned)
-        .with(s("center"), Self::center)
-        //
-        .with(s("vertical"), Self::vertical)
-        .with(s("horizontal"), Self::horizontal)
-        .with(s("wrapped"), Self::wrapped)
-        //
-        .with(s("flex"), Self::flex)
-        .with(s("fill"), Self::fill)
-        .with(s("constrained"), Self::constrained)
-        .with(s("unconstrained"), Self::unconstrained)
-        //
-        .with(s("container"), Self::container)
+    pub fn default_bindings() -> Self {
+        Self::DEFAULT_TOO_BINDINGS
+            .into_iter()
+            .fold(Self::default(), |mapping, &(k, v)| mapping.with(k, v))
     }
 
     pub fn evaluate(&self, ui: &Ui, ctx: Context<'_>) {
@@ -184,7 +183,7 @@ impl Mapping {
         self
     }
 
-    pub fn map_name(name: &str) -> u64 {
+    pub const fn map_name(name: &str) -> u64 {
         hash_fnv_1a(name.as_bytes())
     }
 }

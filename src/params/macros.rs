@@ -41,7 +41,7 @@ macro_rules! make_style {
                     $($ident : value.get(stringify!($ident))?),*
                 })
             }
-        }
+       }
     };
 }
 
@@ -92,6 +92,12 @@ macro_rules! make_class {
                         this.as_str()
                     ))
                 })
+            }
+        }
+
+        impl crate::params::Proxy for $kind {
+            fn create(lua: &mlua::Lua) -> mlua::Result<()>{
+                lua.globals().set(stringify!($kind), lua.create_proxy::<Self>()?)
             }
         }
     };

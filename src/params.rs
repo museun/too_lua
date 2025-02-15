@@ -1,3 +1,7 @@
+trait Proxy: mlua::UserData + 'static {
+    fn create(lua: &mlua::Lua) -> mlua::Result<()>;
+}
+
 #[macro_use]
 mod macros;
 
@@ -51,3 +55,36 @@ pub use constrained::{Constrained, Constraint};
 
 mod color;
 pub use color::Color;
+
+mod value;
+pub use value::Value;
+
+static PROXY_OBJECTS: &[fn(&mlua::Lua) -> mlua::Result<()>] = &[
+    // values
+    Value::create,
+    Constrained::create,
+    // class
+    ProgressClass::create,
+    SliderClass::create,
+    BorderClass::create,
+    LabelClass::create,
+    ButtonClass::create,
+    CheckboxClass::create,
+    SelectedClass::create,
+    TodoClass::create,
+    ToggleClass::create,
+    // enums
+    Border::create,
+    Aligned::create,
+    Align::create,
+    Axis::create,
+    Justify::create,
+    CrossAlign::create,
+];
+
+pub fn initialize(lua: &mlua::Lua) -> mlua::Result<()> {
+    for create in PROXY_OBJECTS {
+        create(lua)?;
+    }
+    Ok(())
+}
