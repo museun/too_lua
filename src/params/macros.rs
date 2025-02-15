@@ -19,9 +19,7 @@ macro_rules! make_style {
     };
 
     ($name:ident => $style:path { $($ident:ident = $ty:ty)* }) => {
-        pub struct $name {
-            $(pub $ident: $ty),*
-        }
+        make_style! { @no_merge $name => $style { $($ident = $ty)* } }
 
         impl $name {
             pub fn merge_style(&self, style: &mut $style) {
@@ -30,18 +28,6 @@ macro_rules! make_style {
                 )*
             }
         }
-
-        impl mlua::FromLua for $name {
-            fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
-                let mlua::Value::Table(value) = value else {
-                    return Err(mlua::Error::runtime("expected a table"));
-                };
-
-                Ok(Self {
-                    $($ident : value.get(stringify!($ident))?),*
-                })
-            }
-       }
     };
 }
 

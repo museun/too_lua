@@ -55,6 +55,7 @@ pub use color::Color;
 mod value;
 pub use value::Value;
 
+// TODO this should produce a lua-ls annotation file
 trait Proxy: mlua::UserData + 'static {
     fn create(lua: &mlua::Lua) -> mlua::Result<()>;
 }
@@ -83,8 +84,5 @@ const PROXY_OBJECTS: &[fn(&mlua::Lua) -> mlua::Result<()>] = &[
 ];
 
 pub fn initialize(lua: &mlua::Lua) -> mlua::Result<()> {
-    for create in PROXY_OBJECTS {
-        create(lua)?;
-    }
-    Ok(())
+    PROXY_OBJECTS.into_iter().try_for_each(|f| f(lua))
 }

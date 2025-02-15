@@ -1,5 +1,3 @@
-use mlua::ObjectLike;
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Constraint {
     ExactSize { w: u16, h: u16 },

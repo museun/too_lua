@@ -57,9 +57,3 @@ impl Extract for Option<Rgba> {
 pub fn merge<E>(left: &mut dyn Extract<R = E>, right: &E) {
     left.extract(right);
 }
-
-pub fn merge_many<E, const N: usize>(left: [&mut dyn Extract<R = E>; N], right: [&E; N]) {
-    for (left, right) in left.into_iter().zip(right.into_iter()) {
-        left.extract(right);
-    }
-}

@@ -587,7 +587,7 @@ impl Mapping {
             return Self::report_missing_data(ui, ctx.id, "frame", "border");
         };
         let Some(Ok(title)) = ctx.params_field::<String>("title") else {
-            return Self::report_missing_data(ui, ctx.id, "border", "border");
+            return Self::report_missing_data(ui, ctx.id, "frame", "title");
         };
 
         let align = ctx
