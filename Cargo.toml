@@ -1,0 +1,12 @@
+[package]
+name = "too_lua"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+too = { git = "https://github.com/museun/too", branch = "too_lua" }
+
+# NOTE the minimum supported lua is 5.3 (for integers)
+mlua = { version = "0.10.3", features = [ "lua54", "error-send" ] }
+slotmap = "1.0.7"
+serde = { version = "1.0.217", features = [ "derive" ] }
