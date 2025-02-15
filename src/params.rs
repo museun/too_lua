@@ -1,7 +1,3 @@
-trait Proxy: mlua::UserData + 'static {
-    fn create(lua: &mlua::Lua) -> mlua::Result<()>;
-}
-
 #[macro_use]
 mod macros;
 
@@ -59,7 +55,11 @@ pub use color::Color;
 mod value;
 pub use value::Value;
 
-static PROXY_OBJECTS: &[fn(&mlua::Lua) -> mlua::Result<()>] = &[
+trait Proxy: mlua::UserData + 'static {
+    fn create(lua: &mlua::Lua) -> mlua::Result<()>;
+}
+
+const PROXY_OBJECTS: &[fn(&mlua::Lua) -> mlua::Result<()>] = &[
     // values
     Value::create,
     Constrained::create,
