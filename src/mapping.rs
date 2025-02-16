@@ -215,6 +215,7 @@ impl Mapping {
 }
 
 impl Mapping {
+    // TODO this could be associated functions on the bindings
     fn margin(&self, ui: &Ui, ctx: Context) {
         let Some(table) = ctx.tree.map[ctx.id].data.as_table() else {
             return Self::report_missing_data(ui, ctx.id, "margin", "margins");
