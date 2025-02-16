@@ -371,10 +371,3 @@ binding! {
       scrollable "boolean?"
     }
 }
-
-binding! {
-    /// Wrapped
-    Wrapped is "wrapped" => {
-
-    }
-}

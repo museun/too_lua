@@ -395,15 +395,13 @@ Justify = {
 ---@field value Value  The state of the selected value, a boolean
 
 ---@class unconstrained  Specifically unconstrained a view
----@field constraint {horizontal: boolean?, vertical: boolean?, both: boolean?  Which axis to remove the constraints for
+---@field constraint {horizontal: boolean?, vertical: boolean?, both: boolean?}  Which axis to remove the constraints for
 
 ---@class vertical  Vertical layout of children
 ---@field justify Justify?  Justification for children on the vertical axis
 ---@field cross_align CrossAlign?  Alignment for children on the horizontal axis
 ---@field gap integer?  Gap between children
 ---@field scrollable boolean?  Should this be scrollable?
-
----@class wrapped  Wrapped
 
 ---@class ui
 ---@field aligned fun(args: aligned): nil  Align its children at a specific anchor
@@ -430,6 +428,5 @@ Justify = {
 ---@field toggle_switch fun(args: toggle_switch): nil  A switch that is toggled when clicked
 ---@field unconstrained fun(args: unconstrained): nil  Specifically unconstrained a view
 ---@field vertical fun(args: vertical): nil  Vertical layout of children
----@field wrapped fun(): nil  Wrapped
 ui = { }
 

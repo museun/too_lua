@@ -118,7 +118,7 @@ pub mod binding;
 use binding::{
     Aligned, Background, Binding, Border, Button, Center, Checkbox, Constrained, Container,
     ExpandAxis, Fill, Flex, Frame, Horizontal, Label, Margin, Progress, Selected, Separator,
-    Slider, TodoValue, Toggle, ToggleSwitch, Unconstrained, Vertical, Wrapped,
+    Slider, TodoValue, Toggle, ToggleSwitch, Unconstrained, Vertical,
 };
 
 pub type Indirect = fn(&Mapping, &Ui<'_>, Context<'_>);
@@ -154,7 +154,6 @@ impl Mapping {
         (Self::toggle_switch, ToggleSwitch::BINDING),
         (Self::unconstrained, Unconstrained::BINDING),
         (Self::vertical, Vertical::BINDING),
-        (Self::wrapped, Wrapped::BINDING),
     ];
 
     pub fn default_bindings() -> Self {
@@ -713,26 +712,6 @@ impl Mapping {
 
     fn horizontal(&self, ui: &Ui, ctx: Context) {
         Self::_list(self, ui, ctx, Axis::Horizontal);
-    }
-
-    fn wrapped(&self, ui: &Ui, ctx: Context) {
-        // TODO params
-        let data = &ctx.tree.map[ctx.id].data;
-        let mode = if let Some(table) = data.as_table() {
-            if table.get::<bool>("horizontal").unwrap_or(true) {
-                Axis::Horizontal
-            } else {
-                Axis::Vertical
-            }
-        } else {
-            Axis::Horizontal
-        };
-
-        too::views::Wrap::new(mode).gap(1).show_children(ui, |ui| {
-            for &child in &ctx.tree.map[ctx.id].children {
-                self.evaluate(ui, ctx.child(child));
-            }
-        });
     }
 
     fn container(&self, ui: &Ui, ctx: Context) {
