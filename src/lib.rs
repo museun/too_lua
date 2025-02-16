@@ -10,7 +10,7 @@ pub use script::Script;
 
 #[macro_use]
 mod mapping;
-pub use mapping::{Context, Indirect, Mapping};
+pub use mapping::{Binding, Context, Field, Indirect, Mapping};
 
 mod tree;
 use tree::{LuaId, Node, UiBuilder};
