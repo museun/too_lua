@@ -22,7 +22,7 @@ fn generate() -> std::io::Result<()> {
         .create(true)
         .write(true)
         .truncate(true)
-        .open("_lua")?;
+        .open("_.lua")?;
     eprintln!("creating a new default _.lua");
 
     writeln!(&mut file, "{}", too_lua::params::generate())
