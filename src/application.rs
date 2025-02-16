@@ -93,7 +93,7 @@ where
             }
         };
 
-        let mapping = Mapping::default_bindings();
+        let mapping = Mapping::too_bindings();
         let debug_mode = self.config.debug;
 
         too::application2(

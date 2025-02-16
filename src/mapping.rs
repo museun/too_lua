@@ -57,7 +57,7 @@ impl Mapping {
         (Vertical::view, Vertical::binding()),
     ];
 
-    pub fn default_bindings() -> Self {
+    pub fn too_bindings() -> Self {
         Self::DEFAULT_TOO_BINDINGS
             .iter()
             .fold(Self::default(), |mapping, &(func, binding)| {
