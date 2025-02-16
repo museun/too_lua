@@ -59,10 +59,11 @@ impl Field {
     }
 }
 
+#[macro_export]
 macro_rules! binding {
     ($(
         #[doc = $doc:expr]
-        $ident:ident is $name:expr => $args:tt {
+        $name:expr => $args:tt {
             $(
                 #[doc = $field_doc:expr]
                 $field:tt $ty:expr
@@ -70,22 +71,18 @@ macro_rules! binding {
         }
     )*) => {
         $(
-            #[doc = $doc]
-            pub struct $ident;
-            impl $ident {
-                pub const BINDING: Binding =
-                    Binding::new($name).doc($doc).args($args).fields(&[$(
-                        Field::new(stringify!($field))
-                            .ty($ty)
-                            .doc($field_doc)
-                    ),*]);
-            }
+            pub const BINDING: Binding =
+                Binding::new($name).doc($doc).args($args).fields(&[$(
+                    Field::new(stringify!($field))
+                        .ty($ty)
+                        .doc($field_doc)
+                ),*]);
         )*
     };
 
     ($(
         #[doc = $doc:expr]
-        $ident:ident is $name:expr => {
+        $name:expr => {
             $(
                 #[doc = $field_doc:expr]
                 $field:tt $ty:expr
@@ -93,24 +90,12 @@ macro_rules! binding {
         }
     )*) => {
         $(
-            #[doc = $doc]
-            pub struct $ident;
-            impl $ident {
-                pub const BINDING: Binding =
-                    Binding::new($name).doc($doc).args("").fields(&[$(
-                        Field::new(stringify!($field))
-                            .ty($ty)
-                            .doc($field_doc)
-                    ),*]);
-            }
+            pub const BINDING: Binding =
+                Binding::new($name).doc($doc).args("").fields(&[$(
+                    Field::new(stringify!($field))
+                        .ty($ty)
+                        .doc($field_doc)
+                ),*]);
         )*
     };
 }
-
-mod bindings;
-
-pub use bindings::{
-    Aligned, Background, Border, Button, Center, Checkbox, Constrained, Container, ExpandAxis,
-    Fill, Flex, Frame, Horizontal, Label, Margin, Progress, Selected, Separator, Slider, TodoValue,
-    Toggle, ToggleSwitch, Unconstrained, Vertical,
-};

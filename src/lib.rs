@@ -8,6 +8,7 @@ pub use application::Application;
 mod script;
 pub use script::Script;
 
+#[macro_use]
 mod mapping;
 pub use mapping::{Context, Indirect, Mapping};
 
@@ -23,3 +24,5 @@ mod notifications;
 use notifications::{Notification, Notifications};
 
 pub mod params;
+
+pub mod bindings;
