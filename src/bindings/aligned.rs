@@ -2,8 +2,7 @@ use too::view::Ui;
 
 use crate::{
     mapping::{Binding, Field},
-    params,
-    Context, Mapping,
+    params, Context, Mapping,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]

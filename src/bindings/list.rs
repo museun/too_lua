@@ -1,9 +1,6 @@
 use too::{layout::Axis, view::Ui};
 
-use crate::{
-    params,
-    Context, Mapping,
-};
+use crate::{params, Context, Mapping};
 
 pub fn list(mapping: &Mapping, ui: &Ui, ctx: Context, axis: Axis) {
     let mut list = too::views::list().axis(axis);
