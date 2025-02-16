@@ -1,5 +1,13 @@
-pub use crate::mapping::{Binding, Field};
+use too::{layout::Axis, view::Ui};
+
+use crate::{
+    mapping::{Binding, Field},
+    Context, Mapping,
+};
+
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Horizontal;
+
 impl Horizontal {
     binding! {
         /// Horizontal layout of children
@@ -14,5 +22,9 @@ impl Horizontal {
             /// Should this be scrollable?
             scrollable "boolean?"
         }
+    }
+
+    pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+        super::list::list(mapping, ui, ctx, Axis::Horizontal);
     }
 }
