@@ -6,7 +6,9 @@ use crate::{
     Context, Mapping,
 };
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Slider;
+
 impl Slider {
     binding! {
         /// A slider to adjust a value

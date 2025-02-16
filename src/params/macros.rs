@@ -14,7 +14,7 @@ macro_rules! make_style {
         }
 
         impl mlua::FromLua for $name {
-            fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
+            fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
                 let mlua::Value::Table(value) = value else {
                     return Err(mlua::Error::runtime("expected a table"));
                 };

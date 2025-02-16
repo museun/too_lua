@@ -6,6 +6,7 @@ use crate::{
     Context, Mapping,
 };
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct TodoValue;
 
 impl TodoValue {
@@ -23,7 +24,7 @@ impl TodoValue {
         }
     }
 
-    pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+    pub fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
         let Ok(params) = ctx.params::<params::TodoParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "todo", "params");
         };

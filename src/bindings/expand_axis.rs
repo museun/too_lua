@@ -1,8 +1,13 @@
 use too::view::Ui;
 
-use crate::{mapping::Binding, Context, Mapping};
+use crate::{
+    mapping::{Binding, Field},
+    Context, Mapping,
+};
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct ExpandAxis;
+
 impl ExpandAxis {
     binding! {
         /// A view that expands the remainder of the space on the axis

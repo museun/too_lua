@@ -71,12 +71,14 @@ macro_rules! binding {
         }
     )*) => {
         $(
-            pub const BINDING: Binding =
-                Binding::new($name).doc($doc).args($args).fields(&[$(
+            pub const fn binding() -> Binding {
+                const FIELDS: &[Field] = &[$(
                     Field::new(stringify!($field))
                         .ty($ty)
                         .doc($field_doc)
-                ),*]);
+                ),*];
+                Binding::new($name).doc($doc).args($args).fields(FIELDS)
+            }
         )*
     };
 
@@ -90,12 +92,14 @@ macro_rules! binding {
         }
     )*) => {
         $(
-            pub const BINDING: Binding =
-                Binding::new($name).doc($doc).args("").fields(&[$(
+            pub const fn binding() -> Binding {
+                const FIELDS: &[Field] = &[$(
                     Field::new(stringify!($field))
                         .ty($ty)
                         .doc($field_doc)
-                ),*]);
+                ),*];
+                Binding::new($name).doc($doc).args("").fields(FIELDS)
+            }
         )*
     };
 }

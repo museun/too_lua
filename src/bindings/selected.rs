@@ -24,7 +24,7 @@ impl Selected {
         }
     }
 
-    pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+    pub fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
         let Ok(params) = ctx.params::<params::SelectedParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "selected", "params");
         };

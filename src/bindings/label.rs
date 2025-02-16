@@ -5,7 +5,9 @@ use crate::{
     params, Context, Mapping,
 };
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Label;
+
 impl Label {
     binding! {
         /// Label displays some text
@@ -19,7 +21,7 @@ impl Label {
         }
     }
 
-    pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+    pub fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
         if let Some(text) = ctx.text() {
             ui.label(&text);
             return;

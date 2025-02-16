@@ -6,7 +6,9 @@ use crate::{
     Context, Mapping,
 };
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Progress;
+
 impl Progress {
     binding! {
         /// A progress bar
@@ -22,7 +24,7 @@ impl Progress {
         }
     }
 
-    pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+    pub fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
         let params = ctx.params::<params::ProgressParams>();
         let axis = ctx.axis();
 

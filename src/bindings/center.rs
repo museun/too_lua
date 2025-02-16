@@ -1,6 +1,9 @@
 use too::view::Ui;
 
-use crate::{mapping::Binding, Context, Mapping};
+use crate::{
+    mapping::{Binding, Field},
+    Context, Mapping,
+};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Center;

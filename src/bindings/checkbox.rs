@@ -6,6 +6,7 @@ use crate::{
     Context, Mapping,
 };
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Checkbox;
 
 impl Checkbox {

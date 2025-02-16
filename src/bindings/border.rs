@@ -5,6 +5,7 @@ use crate::{
     params, Context, Mapping,
 };
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Border;
 
 impl Border {
