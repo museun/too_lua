@@ -3,22 +3,32 @@ use super::Color;
 make_proxy! {
     TodoParams {
         class:
-        TodoClass {
+        TodoClass is "Todo" {
+            /// The default style
             Default  = "default" ; too::views::TodoStyle::default
         }
 
         manual style:
         TodoStyle => too::views::TodoStyle {
-            bold          = Option<bool>
-            faint         = Option<bool>
-            italic        = Option<bool>
-            underline     = Option<bool>
-            blink         = Option<bool>
-            reverse       = Option<bool>
-            strikeout     = Option<bool>
+            /// When selected, the text should be bold
+            bold          = Option<bool> ; "boolean?"
+            /// When selected, the text should be faint
+            faint         = Option<bool> ; "boolean?"
+            /// When selected, the text should be italic
+            italic        = Option<bool> ; "boolean?"
+            /// When selected, the text should be underline
+            underline     = Option<bool> ; "boolean?"
+            /// When selected, the text should be blink
+            blink         = Option<bool> ; "boolean?"
+            /// When selected, the text should be reverse
+            reverse       = Option<bool> ; "boolean?"
+            /// When selected, the text should be strikeout
+            strikeout     = Option<bool> ; "boolean?"
             //
-            text_color    = Option<Color>
-            hovered_color = Option<Color>
+            /// The color of the text
+            text_color    = Option<Color> ; "Color?"
+            /// The color of the text, when hovered
+            hovered_color = Option<Color> ; "Color?"
         }
     }
 }

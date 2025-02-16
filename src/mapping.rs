@@ -114,6 +114,13 @@ impl<'a> Context<'a> {
     }
 }
 
+pub mod binding;
+use binding::{
+    Aligned, Background, Binding, Border, Button, Center, Checkbox, Constrained, Container,
+    ExpandAxis, Fill, Flex, Frame, Horizontal, Label, Margin, Progress, Selected, Separator,
+    Slider, TodoValue, Toggle, ToggleSwitch, Unconstrained, Vertical, Wrapped,
+};
+
 pub type Indirect = fn(&Mapping, &Ui<'_>, Context<'_>);
 
 #[derive(Default)]
@@ -122,40 +129,40 @@ pub struct Mapping {
 }
 
 impl Mapping {
-    const DEFAULT_TOO_BINDINGS: &[(u64, Indirect)] = &[
-        (Self::map_name("vertical"), Self::vertical),
-        (Self::map_name("horizontal"), Self::horizontal),
-        (Self::map_name("background"), Self::background),
-        (Self::map_name("margin"), Self::margin),
-        (Self::map_name("separator"), Self::separator),
-        (Self::map_name("expand_axis"), Self::expand_axis),
-        (Self::map_name("label"), Self::label),
-        (Self::map_name("button"), Self::button),
-        (Self::map_name("slider"), Self::slider),
-        (Self::map_name("progress"), Self::progress),
-        (Self::map_name("border"), Self::border),
-        (Self::map_name("frame"), Self::frame),
-        (Self::map_name("checkbox"), Self::checkbox),
-        (Self::map_name("selected"), Self::selected),
-        (Self::map_name("todo"), Self::todo_value),
-        (Self::map_name("toggle"), Self::toggle_switch),
-        (Self::map_name("show"), Self::toggle),
-        (Self::map_name("aligned"), Self::aligned),
-        (Self::map_name("center"), Self::center),
-        (Self::map_name("vertical"), Self::vertical),
-        (Self::map_name("horizontal"), Self::horizontal),
-        (Self::map_name("wrapped"), Self::wrapped),
-        (Self::map_name("flex"), Self::flex),
-        (Self::map_name("fill"), Self::fill),
-        (Self::map_name("constrained"), Self::constrained),
-        (Self::map_name("unconstrained"), Self::unconstrained),
-        (Self::map_name("container"), Self::container),
+    pub(crate) const DEFAULT_TOO_BINDINGS: &[(Indirect, Binding)] = &[
+        (Self::aligned, Aligned::BINDING),
+        (Self::background, Background::BINDING),
+        (Self::border, Border::BINDING),
+        (Self::button, Button::BINDING),
+        (Self::center, Center::BINDING),
+        (Self::checkbox, Checkbox::BINDING),
+        (Self::constrained, Constrained::BINDING),
+        (Self::container, Container::BINDING),
+        (Self::expand_axis, ExpandAxis::BINDING),
+        (Self::fill, Fill::BINDING),
+        (Self::flex, Flex::BINDING),
+        (Self::frame, Frame::BINDING),
+        (Self::horizontal, Horizontal::BINDING),
+        (Self::label, Label::BINDING),
+        (Self::margin, Margin::BINDING),
+        (Self::progress, Progress::BINDING),
+        (Self::selected, Selected::BINDING),
+        (Self::separator, Separator::BINDING),
+        (Self::toggle, Toggle::BINDING),
+        (Self::slider, Slider::BINDING),
+        (Self::todo_value, TodoValue::BINDING),
+        (Self::toggle_switch, ToggleSwitch::BINDING),
+        (Self::unconstrained, Unconstrained::BINDING),
+        (Self::vertical, Vertical::BINDING),
+        (Self::wrapped, Wrapped::BINDING),
     ];
 
     pub fn default_bindings() -> Self {
         Self::DEFAULT_TOO_BINDINGS
-            .into_iter()
-            .fold(Self::default(), |mapping, &(k, v)| mapping.with(k, v))
+            .iter()
+            .fold(Self::default(), |mapping, &(func, binding)| {
+                mapping.with(Self::map_name(binding.name), func)
+            })
     }
 
     pub fn evaluate(&self, ui: &Ui, ctx: Context<'_>) {
@@ -432,7 +439,7 @@ impl Mapping {
 
     fn selected(&self, ui: &Ui, ctx: Context) {
         let Ok(params) = ctx.params::<params::SelectedParams>() else {
-            return Self::report_missing_data(ui, ctx.id, "checkbox", "params");
+            return Self::report_missing_data(ui, ctx.id, "selected", "params");
         };
 
         let Some(Ok(text)) = ctx.params_field::<String>("text") else {
@@ -452,7 +459,7 @@ impl Mapping {
 
     fn todo_value(&self, ui: &Ui, ctx: Context) {
         let Ok(params) = ctx.params::<params::TodoParams>() else {
-            return Self::report_missing_data(ui, ctx.id, "checkbox", "params");
+            return Self::report_missing_data(ui, ctx.id, "todo", "params");
         };
 
         let Some(Ok(text)) = ctx.params_field::<String>("text") else {
@@ -467,20 +474,20 @@ impl Mapping {
             return Self::report_missing(ui, ctx.id, "bool value");
         };
 
+        let default = <too::views::TodoStyle as too::view::Style>::default;
+
         let view = too::views::todo_value(value, text);
         let class = params
             .class
             .and_then(|class| {
                 #[allow(unreachable_patterns)]
                 let val = match class {
-                    params::TodoClass::Default => {
-                        <too::views::TodoStyle as too::view::Style>::default
-                    }
+                    params::TodoClass::Default => default,
                     _ => return None,
                 };
                 Some(val)
             })
-            .unwrap_or(<too::views::TodoStyle as too::view::Style>::default);
+            .unwrap_or(default);
 
         let mut attr = None;
         let mut text_color = None;
@@ -708,6 +715,32 @@ impl Mapping {
         Self::_list(self, ui, ctx, Axis::Horizontal);
     }
 
+    fn wrapped(&self, ui: &Ui, ctx: Context) {
+        // TODO params
+        let data = &ctx.tree.map[ctx.id].data;
+        let mode = if let Some(table) = data.as_table() {
+            if table.get::<bool>("horizontal").unwrap_or(true) {
+                Axis::Horizontal
+            } else {
+                Axis::Vertical
+            }
+        } else {
+            Axis::Horizontal
+        };
+
+        too::views::Wrap::new(mode).gap(1).show_children(ui, |ui| {
+            for &child in &ctx.tree.map[ctx.id].children {
+                self.evaluate(ui, ctx.child(child));
+            }
+        });
+    }
+
+    fn container(&self, ui: &Ui, ctx: Context) {
+        ctx.visit_children(self, ui);
+    }
+}
+
+impl Mapping {
     fn _list(self: &Mapping, ui: &Ui, ctx: Context, axis: Axis) {
         let mut list = too::views::list().axis(axis);
 
@@ -744,28 +777,37 @@ impl Mapping {
 
         ui.show_children(list, |ui| ctx.visit_children(self, ui));
     }
-
-    fn wrapped(&self, ui: &Ui, ctx: Context) {
-        // TODO params
-        let data = &ctx.tree.map[ctx.id].data;
-        let mode = if let Some(table) = data.as_table() {
-            if table.get::<bool>("horizontal").unwrap_or(true) {
-                Axis::Horizontal
-            } else {
-                Axis::Vertical
-            }
-        } else {
-            Axis::Horizontal
-        };
-
-        too::views::Wrap::new(mode).gap(1).show_children(ui, |ui| {
-            for &child in &ctx.tree.map[ctx.id].children {
-                self.evaluate(ui, ctx.child(child));
-            }
-        });
-    }
-
-    fn container(&self, ui: &Ui, ctx: Context) {
-        ctx.visit_children(self, ui);
-    }
 }
+
+/*
+name : does it take a single value?
+     : does it take a table?
+        is the table style, class?
+        does it take a value? (what about text?)
+
+
+label text
+label(text)
+label {
+    text = text
+    (ui.function | coroutine)?
+}
+label {
+    text = text
+    style = {}
+    class = Label.default
+    (ui.function | coroutine)?
+}
+
+slider(value)
+slider {
+    value = value
+    (ui.function | coroutine)?
+}
+slider {
+    value = value
+    style = {}
+    class = Slider.default
+    (ui.function | coroutine)?
+}
+*/

@@ -14,7 +14,7 @@ pub use mapping::{Context, Indirect, Mapping};
 mod tree;
 use tree::{LuaId, Node, UiBuilder};
 
-pub use tree::Tree;
+pub use tree::{DebugNode, Tree};
 
 mod errors;
 use errors::Errors;

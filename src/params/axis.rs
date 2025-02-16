@@ -1,8 +1,10 @@
 use crate::make_enum;
 
 make_enum! {
-    Axis {
+    enum Axis is "Axis" {
+        /// The vertical axis
         Vertical   = "vertical"
+        /// The horizontal axis
         Horizontal = "horizontal"
     }
 }

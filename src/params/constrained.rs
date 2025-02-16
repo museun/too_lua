@@ -3,7 +3,6 @@ pub enum Constraint {
     ExactSize { w: u16, h: u16 },
     MaxSize { w: u16, h: u16 },
     MinSize { w: u16, h: u16 },
-    //
     ExactHeight(u16),
     ExactWidth(u16),
     MaxHeight(u16),
@@ -38,61 +37,81 @@ impl mlua::UserData for Constraint {
 
 pub struct Constrained;
 
+impl Constrained {
+    const TUPLE_CONSTRUCTORS: &[(&str, fn(u16, u16) -> Constraint)] = &[
+        ("exact_size", |w, h| Constraint::ExactSize { w, h }),
+        ("max_size", |w, h| Constraint::MaxSize { w, h }),
+        ("min_size", |w, h| Constraint::MinSize { w, h }),
+    ];
+
+    const SINGLE_CONSTRUCTORS: &[(&str, fn(u16) -> Constraint)] = &[
+        ("exact_height", |h| Constraint::ExactHeight(h)),
+        ("exact_width", |w| Constraint::ExactWidth(w)),
+        ("max_height", |h| Constraint::MaxHeight(h)),
+        ("max_width", |w| Constraint::MaxWidth(w)),
+        ("min_width", |w| Constraint::MinWidth(w)),
+        ("min_height", |h| Constraint::MinHeight(h)),
+    ];
+}
+
 impl mlua::UserData for Constrained {
     fn add_methods<M>(methods: &mut M)
     where
         M: mlua::UserDataMethods<Self>,
     {
-        methods.add_function("exact_size", |_lua, (w, h): (u16, u16)| {
-            let constraint = Constraint::ExactSize { w, h };
-            Ok(constraint)
-        });
+        for (name, ctor) in Self::TUPLE_CONSTRUCTORS {
+            methods.add_function(name, move |_lua, (w, h)| Ok(ctor(w, h)));
+        }
 
-        methods.add_function("exact_height", |_lua, h: u16| {
-            let constraint = Constraint::ExactHeight(h);
-            Ok(constraint)
-        });
-
-        methods.add_function("exact_width", |_lua, w: u16| {
-            let constraint = Constraint::ExactWidth(w);
-            Ok(constraint)
-        });
-
-        methods.add_function("max_size", |_lua, (w, h): (u16, u16)| {
-            let constraint = Constraint::MaxSize { w, h };
-            Ok(constraint)
-        });
-
-        methods.add_function("max_height", |_lua, h: u16| {
-            let constraint = Constraint::MaxHeight(h);
-            Ok(constraint)
-        });
-
-        methods.add_function("max_width", |_lua, w: u16| {
-            let constraint = Constraint::MaxWidth(w);
-            Ok(constraint)
-        });
-
-        methods.add_function("min_size", |_lua, (w, h): (u16, u16)| {
-            let constraint = Constraint::MinSize { w, h };
-            Ok(constraint)
-        });
-
-        methods.add_function("min_width", |_lua, w: u16| {
-            let constraint = Constraint::MinWidth(w);
-            Ok(constraint)
-        });
-
-        methods.add_function("min_height", |_lua, h: u16| {
-            let constraint = Constraint::MinHeight(h);
-            Ok(constraint)
-        });
+        for (name, ctor) in Self::SINGLE_CONSTRUCTORS {
+            methods.add_function(name, move |_lua, e| Ok(ctor(e)));
+        }
     }
 }
 
 impl crate::params::Proxy for Constrained {
-    fn create(lua: &mlua::Lua) -> mlua::Result<()> {
-        lua.globals()
-            .set("Constrained", lua.create_proxy::<Self>()?)
+    const KIND: super::Kind = super::Kind::Value;
+    const NAME: &'static str = "Constraint";
+    const STYLE: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]> = None;
+
+    fn lua_bindings() -> &'static [(&'static str, &'static str)] {
+        &[
+            (
+                "exact_size fun(w: integer, h: integer): Constraint",
+                "The view has an exact size",
+            ),
+            (
+                "exact_height fun(h: integer): Constraint",
+                "The view has an exact height",
+            ),
+            (
+                "exact_width fun(w: integer): Constraint",
+                "The view has an exact width",
+            ),
+            (
+                "max_size fun(w: integer, h: integer): Constraint",
+                "The view has a max size",
+            ),
+            (
+                "max_height fun(h: integer): Constraint",
+                "The view has a max height",
+            ),
+            (
+                "max_width fun(w: integer): Constraint",
+                "The view has a max width",
+            ),
+            (
+                "min_size fun(w: integer, h: integer): Constraint",
+                "The view has a min size",
+            ),
+            (
+                "min_width fun(w: integer): Constraint",
+                "The view has a min width",
+            ),
+            (
+                "min_height fun(h: integer): Constraint",
+                "The view has a min height",
+            ),
+        ]
     }
 }

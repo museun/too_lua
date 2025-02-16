@@ -52,7 +52,11 @@ impl mlua::UserData for Value {
 }
 
 impl crate::params::Proxy for Value {
-    fn create(lua: &mlua::Lua) -> mlua::Result<()> {
-        lua.globals().set("Value", lua.create_proxy::<Self>()?)
+    const KIND: super::Kind = super::Kind::Value;
+    const NAME: &'static str = "Value";
+    const STYLE: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]> = None;
+
+    fn lua_bindings() -> &'static [(&'static str, &'static str)] {
+        &[("new fun(value: any): Value", "create a new value")]
     }
 }

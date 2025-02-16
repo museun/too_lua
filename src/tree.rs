@@ -97,7 +97,8 @@ impl Tree {
                         return Self::process(lua, id, data);
                     }
                     [data] => {
-                        lua.app_data_mut::<Self>().expect("tree").map[id].data = data.clone();
+                        let mut tree = lua.app_data_mut::<Self>().expect("tree");
+                        tree.map[id].data = data.clone();
                     }
                     _ => {}
                 };
@@ -130,13 +131,14 @@ impl Tree {
                     }
 
                     if len != queue.len() {
-                        lua.app_data_mut::<Self>().expect("tree").stack.push(id);
+                        let mut tree = lua.app_data_mut::<Self>().expect("tree");
+                        tree.stack.push(id);
                         continue;
                     }
 
                     if !table.is_empty() {
-                        lua.app_data_mut::<Self>().expect("tree").map[id].data =
-                            mlua::Value::Table(table)
+                        let mut tree = lua.app_data_mut::<Self>().expect("tree");
+                        tree.map[id].data = mlua::Value::Table(table)
                     }
                 }
 
@@ -182,7 +184,6 @@ impl std::fmt::Debug for Tree {
             .field("map", &DebugSlotMap(&self.map, &self.names))
             .field("stack", &self.stack)
             .field("root", &self.root.data())
-            .field("proxy", &self.proxy)
             .finish()
     }
 }
@@ -207,5 +208,78 @@ impl UserData for UiBuilder {
             };
             tree.proxy(key)
         });
+    }
+}
+
+#[derive(Debug)]
+pub struct DebugNode {
+    pub id: LuaId,
+    pub name: String,
+    pub data: mlua::Value,
+    pub children: Vec<Self>,
+}
+
+impl DebugNode {
+    pub fn build(tree: &Tree) -> Self {
+        fn build(nodes: &mut Vec<DebugNode>, id: LuaId, tree: &Tree) {
+            let mut children = vec![];
+            let node = &tree.map[id];
+            for &child in &node.children {
+                build(&mut children, child, tree)
+            }
+            let node = DebugNode {
+                id,
+                name: tree.names[id].clone(),
+                data: node.data.clone(),
+                children,
+            };
+            nodes.push(node);
+        }
+
+        let mut children = vec![];
+        let node = &tree.map[tree.root];
+        for &node in &node.children {
+            build(&mut children, node, tree);
+        }
+
+        Self {
+            id: tree.root,
+            name: tree.names[tree.root].clone(),
+            data: node.data.clone(),
+            children,
+        }
+    }
+
+    pub fn print(&self, out: &mut impl std::io::Write) {
+        fn print(children: &[DebugNode], prefix: &str, out: &mut impl std::io::Write) {
+            for (i, node) in children.iter().enumerate() {
+                let last = i == children.len() - 1;
+                let upper = if last { "└─ " } else { "├─ " };
+
+                _ = writeln!(
+                    out,
+                    "{prefix}{upper}{name}({id:?}): {data:?}",
+                    name = node.name,
+                    id = node.id.data(),
+                    data = node.data
+                );
+
+                let prefix = if last {
+                    format!("{prefix}  ")
+                } else {
+                    format!("{prefix}| ")
+                };
+
+                print(&node.children, &prefix, out)
+            }
+        }
+
+        _ = writeln!(
+            out,
+            "root({id:?}): {data:?}",
+            id = self.id.data(),
+            data = self.data
+        );
+        print(&self.children, "", out);
     }
 }
