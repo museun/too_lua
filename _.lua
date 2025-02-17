@@ -13,7 +13,10 @@
 Constraint = {}
 
 ---@class (exact) Value
----@field new fun(value: any): Value create a new value
+---@field new fun(value: integer|number|boolean|string): Value create a new value
+---@field persist fun(id: string, value: integer|number|boolean|string): Value create a new value, persisted and accessible via `id`
+---@field destroy fun(id: string): boolean destroys a persisted value `id`, if it exists
+---@field value fun(value: Value): integer|number|boolean|string get the inner value
 Value = {}
 
 ---@enum Align

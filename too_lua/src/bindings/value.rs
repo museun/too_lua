@@ -1,14 +1,18 @@
-use mlua::IntoLua as _;
+use mlua::{AnyUserData, IntoLua as _};
 
-use crate::proxy::{ProxyKind, Proxy};
+use crate::proxy::{Proxy, ProxyKind};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Value {
     Bool(bool),
     Float(f32),
     Signed(isize),
     Unsigned(usize),
     String(String),
+}
+
+impl Value {
+    const GLOBAL_KEY: &'static str = "__TOO_VALUES";
 }
 
 impl mlua::UserData for Value {
@@ -50,6 +54,43 @@ impl mlua::UserData for Value {
             };
             this.into_lua(lua)
         });
+
+        methods.add_function(
+            "persist",
+            |lua, (id, value): (mlua::String, mlua::Value)| {
+                let table = match lua.globals().get::<mlua::Table>(Self::GLOBAL_KEY) {
+                    Ok(table) => table,
+                    Err(..) => {
+                        let table = lua.create_table()?;
+                        lua.globals().set(Self::GLOBAL_KEY, table.clone())?;
+                        table
+                    }
+                };
+
+                match table.get::<AnyUserData>(&id) {
+                    Ok(value) => value.into_lua(lua),
+                    Err(..) => {
+                        let this = match value {
+                            mlua::Value::Boolean(value) => Self::Bool(value),
+                            mlua::Value::Integer(value) => Self::Signed(value as isize),
+                            mlua::Value::Number(value) => Self::Float(value as f32),
+                            mlua::Value::String(value) => Self::String(value.to_string_lossy()),
+                            _ => return Err(mlua::Error::runtime("invalid type")),
+                        };
+                        let this = this.into_lua(lua)?;
+                        table.set(id, this.clone())?;
+                        Ok(this)
+                    }
+                }
+            },
+        );
+
+        methods.add_function("destroy", |lua, id: mlua::String| {
+            if let Ok(table) = lua.globals().get::<mlua::Table>(Self::GLOBAL_KEY) {
+                return Ok(table.set(id, mlua::Value::Nil).is_ok());
+            }
+            Ok(false)
+        });
     }
 }
 
@@ -59,6 +100,23 @@ impl Proxy for Value {
     const STYLE: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]> = None;
 
     fn lua_bindings() -> &'static [(&'static str, &'static str)] {
-        &[("new fun(value: any): Value", "create a new value")]
+        &[
+            (
+                "new fun(value: integer|number|boolean|string): Value",
+                "create a new value",
+            ),
+            (
+                "persist fun(id: string, value: integer|number|boolean|string): Value",
+                "create a new value, persisted and accessible via `id`",
+            ),
+            (
+                "destroy fun(id: string): boolean",
+                "destroys a persisted value `id`, if it exists",
+            ),
+            (
+                "value fun(value: Value): integer|number|boolean|string",
+                "get the inner value",
+            ),
+        ]
     }
 }

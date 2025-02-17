@@ -213,6 +213,11 @@ where
                 mapping.evaluate(ui, ctx);
             });
 
+            if let Err(err) = script.update(&lua) {
+                errors.handle_lua_error("cannot evaluate", err);
+                return Ok(true);
+            }
+
             let mut rasterizer = CroppedSurface::new(surface.rect(), &mut surface);
             state.render(&mut rasterizer);
 
