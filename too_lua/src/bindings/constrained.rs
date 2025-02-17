@@ -2,7 +2,7 @@ use too::view::Ui;
 
 use crate::{
     mapping::{Binding, Field},
-    proxy::{ProxyKind, Proxy},
+    proxy::{Proxy, ProxyKind},
     Context, Mapping,
 };
 
@@ -27,7 +27,7 @@ impl mlua::FromLua for ConstraintKind {
                 value.type_name()
             )));
         };
-        ud.take()
+        ud.borrow::<Self>().map(|c| *c)
     }
 }
 
