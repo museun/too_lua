@@ -114,12 +114,8 @@ impl Proxy for Value {
                 "destroys a persisted value `id`, if it exists",
             ),
             (
-                "value fun(value: Value): integer|number|boolean|string",
-                "get the inner value",
-            ),
-            (
                 "value integer|number|boolean|string", //
-                "set the inner value",
+                "get the inner value",
             ),
         ]
     }
