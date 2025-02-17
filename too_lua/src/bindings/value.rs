@@ -117,6 +117,10 @@ impl Proxy for Value {
                 "value fun(value: Value): integer|number|boolean|string",
                 "get the inner value",
             ),
+            (
+                "value integer|number|boolean|string", //
+                "set the inner value",
+            ),
         ]
     }
 }
