@@ -88,9 +88,6 @@ impl Script {
         timeout: Duration,
     ) -> std::thread::JoinHandle<()> {
         // FIXME use notify here
-        //
-        // TODO if we're going to support require we should read all of the
-        // files in the dir and sort by the their modified time
         fn last_modified(path: &Path) -> Option<SystemTime> {
             let md = std::fs::metadata(path).ok()?;
             md.is_file().then_some(md.modified().ok()?)

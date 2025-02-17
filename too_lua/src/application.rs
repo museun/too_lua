@@ -135,7 +135,6 @@ where
         let mut last_resize = None;
 
         run_loop(fps, |_fr, dt| {
-            profiling::finish_frame!();
             state.update(dt);
 
             let mut was_manually_reloaded = false;
@@ -164,8 +163,6 @@ where
             }
 
             if was_manually_reloaded || script.should_reload() {
-                profiling::scope!("reload script");
-
                 Debug::clear();
                 if let Err(err) = script.reload(&lua) {
                     errors.handle_lua_error("cannot load", err);
@@ -190,7 +187,7 @@ where
                 should_render = true;
             }
 
-            if lua.app_data_mut::<Tree>().unwrap().evaluate_lazies() {}
+            let _ = lua.app_data_mut::<Tree>().unwrap().evaluate_lazies();
 
             state.build(surface.rect(), |ui| {
                 let tree = lua.app_data_ref::<Tree>().unwrap();
@@ -201,7 +198,6 @@ where
                     tree.root,
                 );
 
-                profiling::scope!("evaluate lua ui tree");
                 mapping.evaluate(ui, ctx);
             });
 

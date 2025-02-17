@@ -23,7 +23,6 @@ pub struct Mapping {
     map: HashMap<u64, Indirect, too::helpers::DefaultIntHasher>,
 }
 
-#[profiling::all_functions]
 impl Mapping {
     pub fn from_bindings(bindings: Bindings) -> Self {
         Self::default().with_many(
@@ -44,12 +43,10 @@ impl Mapping {
         self
     }
 
-    #[profiling::skip]
     pub const fn map_name(name: &str) -> u64 {
         hash_fnv_1a(name.as_bytes())
     }
 
-    #[profiling::skip]
     #[inline(always)]
     pub fn evaluate(&self, ui: &Ui, ctx: Context<'_>) {
         if ctx.id == ctx.tree.root {
