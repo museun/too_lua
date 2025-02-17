@@ -235,10 +235,7 @@ where
         });
         lua.globals().set("debug", debug).unwrap();
 
-        let require = match lua.globals().get::<mlua::Function>("require") {
-            Ok(require) => require,
-            Err(err) => panic!("oops: {err}"),
-        };
+        let require = lua.globals().get::<mlua::Function>("require").unwrap();
 
         let loaded = lua.create_table().unwrap();
         lua.globals().set("__TOO_LOADED", loaded).unwrap();
