@@ -29,6 +29,7 @@ pub struct Mapping {
     map: HashMap<u64, Indirect, too::helpers::DefaultIntHasher>,
 }
 
+#[profiling::all_functions]
 impl Mapping {
     pub(crate) const DEFAULT_TOO_BINDINGS: &[(Indirect, Binding)] = &[
         (Aligned::view, Aligned::binding()),
@@ -49,9 +50,9 @@ impl Mapping {
         (Progress::view, Progress::binding()),
         (Selected::view, Selected::binding()),
         (Separator::view, Separator::binding()),
-        (Toggle::view, Toggle::binding()),
         (Slider::view, Slider::binding()),
         (TodoValue::view, TodoValue::binding()),
+        (Toggle::view, Toggle::binding()),
         (ToggleSwitch::view, ToggleSwitch::binding()),
         (Unconstrained::view, Unconstrained::binding()),
         (Vertical::view, Vertical::binding()),
@@ -65,6 +66,8 @@ impl Mapping {
             })
     }
 
+    #[profiling::skip]
+    #[inline(always)]
     pub fn evaluate(&self, ui: &Ui, ctx: Context<'_>) {
         if ctx.id == ctx.tree.root {
             ctx.visit_children(self, ui);
@@ -73,7 +76,12 @@ impl Mapping {
 
         let name = &ctx.tree.map[ctx.id].name;
 
-        let Some(func) = self.map.get(name) else {
+        let child = {
+            profiling::scope!("get child");
+            self.map.get(name)
+        };
+
+        let Some(func) = child else {
             ui.label(format_str!(
                 "cannot find: {name}/{id:?}",
                 name = &ctx.tree.names[ctx.id],
@@ -82,6 +90,7 @@ impl Mapping {
             return;
         };
 
+        profiling::scope!("evaluate child");
         func(self, ui, ctx);
     }
 
@@ -90,6 +99,7 @@ impl Mapping {
         self
     }
 
+    #[profiling::skip]
     pub const fn map_name(name: &str) -> u64 {
         hash_fnv_1a(name.as_bytes())
     }

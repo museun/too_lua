@@ -23,6 +23,7 @@ impl Vertical {
         }
     }
 
+    #[profiling::function]
     pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         super::list::list(mapping, ui, ctx, Axis::Vertical);
     }

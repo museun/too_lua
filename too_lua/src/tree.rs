@@ -53,11 +53,13 @@ impl Tree {
         names.insert(root, root_name.to_string_lossy());
 
         Ok(Self {
-            map,
-            stack: vec![root],
             root,
-            proxy: table,
+
+            map,
             names,
+
+            stack: vec![root],
+            proxy: table,
         })
     }
 }

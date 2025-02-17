@@ -1,7 +1,17 @@
-use std::{path::PathBuf, time::Duration};
+use std::{
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
 use mlua::{MaybeSend, UserData};
-use too::{backend::Keybind, debug, view::Debug, RunConfig};
+use too::{
+    backend::{Backend as _, EventReader, Keybind},
+    debug,
+    renderer::Surface,
+    term::{Config as TermConfig, Term},
+    view::{CroppedSurface, Debug, State},
+    RunConfig,
+};
 
 use crate::{
     Context, Errors, Mapping, Script, Tree, {Notification, Notifications},
@@ -72,15 +82,11 @@ where
                 .expect("create user state")
         }
 
-        lua.globals()
-            .set(
-                "debug",
-                mlua::Function::wrap(|data: String| {
-                    debug(data);
-                    Ok(())
-                }),
-            )
-            .unwrap();
+        let debug = mlua::Function::wrap(|data: String| {
+            debug(data);
+            Ok(())
+        });
+        lua.globals().set("debug", debug).unwrap();
 
         crate::params::initialize(&lua).unwrap();
 
@@ -93,64 +99,143 @@ where
             }
         };
 
+        if let Err(err) = script.update(&lua) {
+            eprintln!("cannot evaluate script: {err}");
+            return Err(std::io::Error::other(err.to_string()));
+        }
+
         let mapping = Mapping::too_bindings();
-        let debug_mode = self.config.debug;
 
-        too::application2(
-            self.config,
-            (Errors::default(), Notifications::new()),
-            |surface, palette, (errors, notifications)| {
-                notifications.render(0, palette, surface);
-                errors.render_errors(surface);
-            },
-            |ui, (errors, notifications)| {
-                let mut was_manually_reloaded = false;
+        let mut errors = Errors::default();
+        let mut notifications = Notifications::default();
 
-                if ui.key_pressed(Keybind::from_char('d')) {
-                    Debug::clear();
+        let mut term = Term::setup(
+            TermConfig::default()
+                .hook_panics(self.config.hook_panics)
+                .ctrl_c_quits(self.config.ctrl_c_quits)
+                .ctrl_z_switches(self.config.ctrl_z_switches),
+        )?;
+        let mut surface = Surface::new(term.size());
+
+        let mut state = State::new(self.config.palette, self.config.animation);
+        Debug::set_debug_mode(self.config.debug);
+        Debug::set_debug_anchor(self.config.debug_anchor);
+
+        let fps = self.config.fps.max(1.0);
+        let target = Duration::from_secs_f32(1.0 / fps);
+        let max_budget = (target / 2).max(Duration::from_millis(1));
+
+        let mut should_render = false;
+        let mut last_resize = None;
+
+        run_loop(fps, |fr, dt| {
+            profiling::finish_frame!();
+            state.update(dt);
+
+            let mut was_manually_reloaded = false;
+            let start = Instant::now();
+            while let Some(ev) = term.try_read_event() {
+                if ev.is_quit() {
+                    return Ok(false);
                 }
 
-                if ui.key_pressed(Keybind::from_char('t')) {
-                    let mode = if Debug::is_enabled() {
-                        too::view::DebugMode::Off
-                    } else {
-                        debug_mode
-                    };
-                    Debug::set_debug_mode(mode);
+                if start.elapsed() >= max_budget {
+                    break;
                 }
 
                 if let Some(reload) = self.reload {
-                    was_manually_reloaded ^= ui.key_pressed(reload);
+                    was_manually_reloaded ^= ev.is_keybind_pressed(reload);
                 }
 
-                if was_manually_reloaded || script.should_reload() {
-                    Debug::clear();
-                    if let Err(err) = script.reload(&lua) {
-                        errors.handle_lua_error("cannot load", err);
-                        return;
-                    }
-
-                    notifications.push(Notification::new(
-                        "loaded new script",
-                        Duration::from_secs(3),
-                    ));
+                if let too::backend::Event::Resize(size) = ev {
+                    last_resize = Some(size);
+                    continue;
                 }
 
-                if let Err(err) = script.update(&lua) {
-                    errors.handle_lua_error("cannot build ui", err);
-                    return;
+                surface.update(&ev);
+                state.event(&ev);
+                should_render = true;
+            }
+
+            if was_manually_reloaded || script.should_reload() {
+                profiling::scope!("reload script");
+
+                Debug::clear();
+                if let Err(err) = script.reload(&lua) {
+                    errors.handle_lua_error("cannot load", err);
+                    return Ok(true);
                 }
 
+                notifications.push(Notification::new(
+                    "loaded new script",
+                    Duration::from_secs(3),
+                ));
+            }
+
+            if let Some(size) = last_resize {
+                let ev = too::backend::Event::Resize(size);
+                surface.update(&ev);
+                state.event(&ev);
+                should_render = true;
+            }
+
+            if let Err(err) = script.update(&lua) {
+                errors.handle_lua_error("cannot evaluate", err);
+                return Ok(true);
+            }
+
+            state.build(surface.rect(), |ui| {
                 let tree = lua.app_data_ref::<Tree>().unwrap();
-
                 let ctx = Context::new(
                     &lua, //
                     &tree,
                     &tree.map[tree.root],
                     tree.root,
                 );
+
+                profiling::scope!("evaluate lua ui tree");
                 mapping.evaluate(ui, ctx);
-            },
-        )
+            });
+
+            let mut rasterizer = CroppedSurface::new(surface.rect(), &mut surface);
+            state.render(&mut rasterizer);
+
+            notifications.render(0, &state.palette(), &mut surface);
+            errors.render(&mut surface);
+
+            surface.render(&mut term.writer())?;
+
+            Ok(true)
+        })
+    }
+}
+
+fn run_loop<E>(target: f32, mut frame: impl FnMut(u64, f32) -> Result<bool, E>) -> Result<(), E> {
+    const EMA_ALPHA: f32 = 0.1;
+    let mut ema_avg = 1.0 / target;
+    let update = |value, avg| EMA_ALPHA * value + (1.0 - EMA_ALPHA) * avg;
+
+    let mut fr = 0;
+    let mut prev = Instant::now();
+    let mut next = prev;
+
+    loop {
+        let now = Instant::now();
+        let dt = (now - prev).as_secs_f32();
+        prev = now;
+
+        ema_avg = update(dt, ema_avg);
+        next += Duration::from_secs_f32(ema_avg);
+        if !frame(fr, dt)? {
+            return Ok(());
+        }
+
+        let sleep = next.saturating_duration_since(Instant::now());
+        if !sleep.is_zero() {
+            std::thread::park_timeout(sleep);
+        } else {
+            next = Instant::now();
+        }
+        fr += 1;
     }
 }

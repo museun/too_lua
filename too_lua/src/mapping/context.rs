@@ -16,7 +16,9 @@ pub struct Context<'a> {
     pub(crate) id: LuaId,
 }
 
+#[profiling::all_functions]
 impl<'a> Context<'a> {
+    #[profiling::skip]
     pub(crate) const fn new(
         lua: &'a mlua::Lua,
         tree: &'a Tree,
@@ -40,6 +42,7 @@ impl<'a> Context<'a> {
         }
     }
 
+    #[inline(always)]
     pub fn visit_children(&self, mapping: &Mapping, ui: &Ui) {
         for &child in &self.tree.map[self.id].children {
             mapping.evaluate(ui, self.child(child));
@@ -89,6 +92,10 @@ impl<'a> Context<'a> {
 
     pub fn text(&self) -> Option<String> {
         self.current.data.as_string_lossy()
+    }
+
+    pub fn text_ref(&self) -> Option<mlua::BorrowedStr<'_>> {
+        self.current.data.as_str()
     }
 
     pub fn value(&self) -> Option<UserDataRef<Value>> {

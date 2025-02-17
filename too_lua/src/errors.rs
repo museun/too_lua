@@ -56,7 +56,7 @@ impl Errors {
         );
     }
 
-    pub fn render_errors(&mut self, surface: &mut too::renderer::Surface) {
+    pub fn render(&mut self, surface: &mut too::renderer::Surface) {
         if self.errors.is_empty() {
             return;
         }

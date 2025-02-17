@@ -28,6 +28,12 @@ pub struct Notifications {
     anchor: Anchor2,
 }
 
+impl Default for Notifications {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Notifications {
     pub fn new() -> Self {
         Self {

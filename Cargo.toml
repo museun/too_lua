@@ -4,3 +4,12 @@ members = [
     "xtask"
 ]
 resolver = "2"
+
+[profile.dev.package.mlua]
+opt-level = 3
+
+[profile.dev.package.slotmap]
+opt-level = 3
+
+[patch.'https://github.com/museun/too']
+too = { path = "../too" }

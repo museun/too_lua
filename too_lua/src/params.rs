@@ -1,9 +1,9 @@
+use std::borrow::Cow;
+
 #[macro_use]
 mod macros;
 
 mod extract;
-use std::borrow::Cow;
-
 use extract::merge;
 
 mod align;

@@ -12,7 +12,7 @@ pub struct ToggleSwitch;
 impl ToggleSwitch {
     binding! {
         /// A switch that is toggled when clicked
-        "toggle_switch" => "toggle_switch" {
+        "toggle_switch" => "Value | toggle_switch" {
             /// The style of the selected value
             style "ToggleStyle?"
             /// The class of the selected value
@@ -23,9 +23,8 @@ impl ToggleSwitch {
     }
 
     pub fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Ok(params) = ctx.params::<params::ToggleParams>() else {
-            return Mapping::report_missing_data(ui, ctx.id, "toggle", "params");
-        };
+        let params = ctx.params::<params::ToggleParams>();
+        let axis = ctx.axis();
 
         let Some(mut value) = ctx.value_mut() else {
             return Mapping::report_missing_data(ui, ctx.id, "toggle", "value");
@@ -35,12 +34,11 @@ impl ToggleSwitch {
             return Mapping::report_missing(ui, ctx.id, "bool value");
         };
 
-        let axis = ctx.axis();
+        let mut view = too::views::toggle_switch(value).axis(axis);
+        if let Ok(params) = params {
+            view = view.class(params.apply())
+        }
 
-        ui.show(
-            too::views::toggle_switch(value)
-                .axis(axis)
-                .class(params.apply()),
-        );
+        ui.show(view);
     }
 }

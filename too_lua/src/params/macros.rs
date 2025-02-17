@@ -380,6 +380,8 @@ macro_rules! make_proxy {
                 };
 
                 Ok(Self {
+                    // TODO optional constraint
+                    // so ui.whatever { contraint = Constraint.min_width(10), .. stuff }
                     style: table.get("style")?,
                     class: table.get("class")?,
                 })

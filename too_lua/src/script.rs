@@ -15,12 +15,22 @@ pub struct Script {
 }
 
 impl Script {
+    pub fn from_source(source: &str, lua: &mlua::Lua) -> mlua::Result<Self> {
+        let (tx, events) = std::sync::mpsc::channel();
+        Ok(Self {
+            update: lua.load(source).eval()?,
+            events,
+            _handle: None,
+            path: PathBuf::from("<null>"),
+        })
+    }
+
     pub fn new(
         path: impl Into<PathBuf>,
         timeout: Option<Duration>,
         lua: &mlua::Lua,
     ) -> mlua::Result<Self> {
-        let path = path.into();
+        let path: PathBuf = path.into();
         let data = std::fs::read_to_string(&path)?;
 
         let (tx, events) = std::sync::mpsc::channel();
@@ -39,10 +49,14 @@ impl Script {
         self.update.call::<()>((UiBuilder, data))
     }
 
+    pub fn reload_source(&mut self, source: &str, lua: &mlua::Lua) -> mlua::Result<()> {
+        self.update = lua.load(source).eval()?;
+        Ok(())
+    }
+
     pub fn reload(&mut self, lua: &mlua::Lua) -> mlua::Result<()> {
         let data = std::fs::read_to_string(&self.path)?;
-        self.update = lua.load(data).eval()?;
-        Ok(())
+        self.reload_source(&data, lua)
     }
 
     pub fn should_reload(&mut self) -> bool {

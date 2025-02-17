@@ -18,7 +18,7 @@ make_proxy! {
         }
 
         style:
-        ToggleStyle => too::views::ToggleStyle{
+        ToggleStyle => too::views::ToggleStyle {
             /// The character to use for the track
             track             = Option<String> ; "string?"
             /// The color of the track
