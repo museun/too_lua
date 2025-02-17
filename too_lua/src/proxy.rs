@@ -9,7 +9,7 @@ use crate::{
         Constraint, CrossAlign, Justify, LabelClass, ProgressClass, SelectedClass, SliderClass,
         TodoClass, ToggleClass, Value,
     },
-    Binding, Indirect,
+    Bindings,
 };
 
 #[derive(Default)]
@@ -112,10 +112,7 @@ pub(crate) fn initialize<'i>(
         .try_for_each(|proxy| (proxy.create)(lua))
 }
 
-pub fn generate<'a, 'b>(
-    proxies: &Proxies,
-    bindings: impl IntoIterator<Item = &'b (Binding, Indirect)>, // what do we do here?
-) -> String {
+pub fn generate<'a, 'b>(proxies: &Proxies, bindings: &Bindings) -> String {
     use std::fmt::Write as _;
     let mut out = String::new();
 
