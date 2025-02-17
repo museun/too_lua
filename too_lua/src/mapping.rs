@@ -58,13 +58,7 @@ impl Mapping {
         }
 
         let name = &ctx.tree.map[ctx.id].name;
-
-        let child = {
-            profiling::scope!("get child");
-            self.map.get(name)
-        };
-
-        let Some(func) = child else {
+        let Some(func) = self.map.get(name) else {
             ui.label(format_str!(
                 "cannot find: {name}/{id:?}",
                 name = &ctx.tree.names[ctx.id],
@@ -73,7 +67,6 @@ impl Mapping {
             return;
         };
 
-        profiling::scope!("evaluate child");
         func(self, ui, ctx);
     }
 }

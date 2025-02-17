@@ -58,15 +58,12 @@ impl Label {
         }
     }
 
-    #[profiling::function]
     pub fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        {
-            profiling::scope!("label text only");
-            if let Some(text) = ctx.text_ref() {
-                ui.label(text);
-                return;
-            }
+        if let Some(text) = ctx.text_ref() {
+            ui.label(text);
+            return;
         }
+
         let Some(Ok(text)) = ctx.params_field::<String>("text") else {
             return Mapping::report_missing_data(ui, ctx.id, "label", "text");
         };
@@ -78,14 +75,10 @@ impl Label {
         use too::views::Label as L;
         type Apply = fn(L) -> L;
 
-        let mut label = {
-            profiling::scope!("make label");
-            too::views::label(text)
-        };
+        let mut label = too::views::label(text);
 
         let mut fg = None;
         if let Some(style) = params.style {
-            profiling::scope!("label style");
             if let Some(Color(new)) = style.foreground {
                 fg = Some(new)
             }
@@ -115,7 +108,6 @@ impl Label {
         let class = params
             .class
             .and_then(|class| {
-                profiling::scope!("label class");
                 let val = match class {
                     LabelClass::Info => too::views::LabelStyle::info,
                     LabelClass::Warning => too::views::LabelStyle::warning,
@@ -133,7 +125,6 @@ impl Label {
             label.class(class)
         };
 
-        profiling::scope!("show label");
         ui.show(label);
     }
 }

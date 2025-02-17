@@ -16,7 +16,6 @@ pub struct Context<'a> {
     pub(crate) id: LuaId,
 }
 
-#[profiling::all_functions]
 impl<'a> Context<'a> {
     #[profiling::skip]
     pub(crate) const fn new(
@@ -43,6 +42,7 @@ impl<'a> Context<'a> {
     }
 
     #[inline(always)]
+    #[profiling::function]
     pub fn visit_children(&self, mapping: &Mapping, ui: &Ui) {
         for &child in &self.tree.map[self.id].children {
             mapping.evaluate(ui, self.child(child));
