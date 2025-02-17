@@ -7,7 +7,7 @@ use too::{
     view::{Ui, ViewExt as _},
 };
 
-use crate::LuaId;
+use crate::{Bindings, LuaId};
 
 mod context;
 pub use context::Context;
@@ -15,12 +15,6 @@ pub use context::Context;
 #[macro_use]
 mod binding;
 pub use binding::{Binding, Field};
-
-use crate::bindings::{
-    Aligned, Background, Border, Button, Center, Checkbox, Constrained, Container, ExpandAxis,
-    Fill, Flex, Frame, Horizontal, Label, Margin, Progress, Selected, Separator, Slider, TodoValue,
-    Toggle, ToggleSwitch, Unconstrained, Vertical,
-};
 
 pub type Indirect = fn(&Mapping, &Ui<'_>, Context<'_>);
 
@@ -31,39 +25,28 @@ pub struct Mapping {
 
 #[profiling::all_functions]
 impl Mapping {
-    pub(crate) const DEFAULT_TOO_BINDINGS: &[(Indirect, Binding)] = &[
-        (Aligned::view, Aligned::binding()),
-        (Background::view, Background::binding()),
-        (Border::view, Border::binding()),
-        (Button::view, Button::binding()),
-        (Center::view, Center::binding()),
-        (Checkbox::view, Checkbox::binding()),
-        (Constrained::view, Constrained::binding()),
-        (Container::view, Container::binding()),
-        (ExpandAxis::view, ExpandAxis::binding()),
-        (Fill::view, Fill::binding()),
-        (Flex::view, Flex::binding()),
-        (Frame::view, Frame::binding()),
-        (Horizontal::view, Horizontal::binding()),
-        (Label::view, Label::binding()),
-        (Margin::view, Margin::binding()),
-        (Progress::view, Progress::binding()),
-        (Selected::view, Selected::binding()),
-        (Separator::view, Separator::binding()),
-        (Slider::view, Slider::binding()),
-        (TodoValue::view, TodoValue::binding()),
-        (Toggle::view, Toggle::binding()),
-        (ToggleSwitch::view, ToggleSwitch::binding()),
-        (Unconstrained::view, Unconstrained::binding()),
-        (Vertical::view, Vertical::binding()),
-    ];
+    pub fn from_bindings(bindings: Bindings) -> Self {
+        Self::default().with_many(
+            bindings
+                .into_iter()
+                .map(|&(binding, func)| (binding.name, func)),
+        )
+    }
 
-    pub fn too_bindings() -> Self {
-        Self::DEFAULT_TOO_BINDINGS
-            .iter()
-            .fold(Self::default(), |mapping, &(func, binding)| {
-                mapping.with(Self::map_name(binding.name), func)
-            })
+    pub fn with_many<'s>(self, many: impl IntoIterator<Item = (&'s str, Indirect)>) -> Self {
+        many.into_iter().fold(self, |mapping, (name, func)| {
+            mapping.with(Self::map_name(name), func)
+        })
+    }
+
+    pub fn with(mut self, view: u64, value: Indirect) -> Self {
+        self.map.insert(view, value);
+        self
+    }
+
+    #[profiling::skip]
+    pub const fn map_name(name: &str) -> u64 {
+        hash_fnv_1a(name.as_bytes())
     }
 
     #[profiling::skip]
@@ -92,16 +75,6 @@ impl Mapping {
 
         profiling::scope!("evaluate child");
         func(self, ui, ctx);
-    }
-
-    pub fn with(mut self, view: u64, value: Indirect) -> Self {
-        self.map.insert(view, value);
-        self
-    }
-
-    #[profiling::skip]
-    pub const fn map_name(name: &str) -> u64 {
-        hash_fnv_1a(name.as_bytes())
     }
 }
 

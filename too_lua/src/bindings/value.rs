@@ -1,5 +1,7 @@
 use mlua::IntoLua as _;
 
+use crate::proxy::{ProxyKind, Proxy};
+
 #[derive(Debug)]
 pub enum Value {
     Bool(bool),
@@ -51,8 +53,8 @@ impl mlua::UserData for Value {
     }
 }
 
-impl crate::params::Proxy for Value {
-    const KIND: super::Kind = super::Kind::Value;
+impl Proxy for Value {
+    const KIND: ProxyKind = ProxyKind::Value;
     const NAME: &'static str = "Value";
     const STYLE: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]> = None;
 

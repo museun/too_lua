@@ -1,67 +1,71 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, collections::BTreeSet};
 
 #[macro_use]
 mod macros;
 
-mod extract;
-use extract::merge;
+use crate::{
+    bindings::{
+        Align, AlignedParams, Axis, BorderClass, BorderKind, ButtonClass, CheckboxClass,
+        Constraint, CrossAlign, Justify, LabelClass, ProgressClass, SelectedClass, SliderClass,
+        TodoClass, ToggleClass, Value,
+    },
+    Binding, Indirect,
+};
 
-mod align;
-pub use align::Align;
+#[derive(Default)]
+pub struct Proxies {
+    set: BTreeSet<ProxyObject>,
+}
 
-mod axis;
-pub use axis::Axis;
+impl<'a> IntoIterator for &'a Proxies {
+    type Item = &'a ProxyObject;
+    type IntoIter = std::collections::btree_set::Iter<'a, ProxyObject>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.set.iter()
+    }
+}
 
-mod aligned;
-pub use aligned::Aligned;
+impl Proxies {
+    const DEFAULT_PROXY_OBJECTS: &[ProxyObject] = &[
+        // values
+        proxy::<Value>(),
+        proxy::<Constraint>(),
+        // class
+        proxy::<BorderClass>(),
+        proxy::<ButtonClass>(),
+        proxy::<CheckboxClass>(),
+        proxy::<LabelClass>(),
+        proxy::<ProgressClass>(),
+        proxy::<SelectedClass>(),
+        proxy::<SliderClass>(),
+        proxy::<TodoClass>(),
+        proxy::<ToggleClass>(),
+        // enums
+        proxy::<Align>(),
+        proxy::<AlignedParams>(),
+        proxy::<Axis>(),
+        proxy::<BorderKind>(),
+        proxy::<CrossAlign>(),
+        proxy::<Justify>(),
+    ];
 
-mod justify;
-pub use justify::Justify;
+    pub fn default_proxies() -> Self {
+        Self::default().with_many(Self::DEFAULT_PROXY_OBJECTS.iter().copied())
+    }
 
-mod cross_align;
-pub use cross_align::CrossAlign;
+    pub fn with_many(self, many: impl IntoIterator<Item = ProxyObject>) -> Self {
+        many.into_iter().fold(self, |this, proxy| this.with(proxy))
+    }
 
-mod progress;
-pub use progress::{ProgressClass, ProgressParams, ProgressStyle};
+    pub fn with(mut self, proxy: ProxyObject) -> Self {
+        self.set.insert(proxy);
+        self
+    }
+}
 
-mod slider;
-pub use slider::{SliderClass, SliderParams, SliderStyle};
-
-mod label;
-pub use label::{LabelClass, LabelParams, LabelStyle};
-
-mod button;
-pub use button::{ButtonClass, ButtonParams, ButtonStyle};
-
-mod border;
-pub use border::{Border, BorderClass, BorderParams, BorderStyle};
-
-mod checkbox;
-pub use checkbox::{CheckboxClass, CheckboxParams, CheckboxStyle};
-
-mod selected;
-pub use selected::{SelectedClass, SelectedParams, SelectedStyle};
-
-mod todo;
-pub use todo::{TodoClass, TodoParams, TodoStyle};
-
-mod toggle;
-pub use toggle::{ToggleClass, ToggleParams, ToggleStyle};
-
-mod constrained;
-pub use constrained::{Constrained, Constraint};
-
-mod color;
-pub use color::Color;
-
-mod value;
-pub use value::Value;
-
-use crate::Mapping;
-
-trait Proxy: mlua::UserData + 'static {
+pub trait Proxy: mlua::UserData + 'static {
     const NAME: &'static str;
-    const KIND: Kind;
+    const KIND: ProxyKind;
 
     // TODO figure out a better place for this
     const STYLE: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]>;
@@ -73,7 +77,7 @@ trait Proxy: mlua::UserData + 'static {
     fn lua_bindings() -> &'static [(&'static str, &'static str)];
 }
 
-const fn proxy<T: Proxy>() -> ProxyObject {
+pub const fn proxy<T: Proxy>() -> ProxyObject {
     ProxyObject {
         kind: T::KIND,
         name: T::NAME,
@@ -83,50 +87,35 @@ const fn proxy<T: Proxy>() -> ProxyObject {
     }
 }
 
-struct ProxyObject {
-    kind: Kind,
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ProxyObject {
+    kind: ProxyKind,
     name: &'static str,
     create: fn(&mlua::Lua) -> mlua::Result<()>,
     bindings: fn() -> &'static [(&'static str, &'static str)],
+    // TODO redo this
     style: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]>,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-enum Kind {
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ProxyKind {
     Value,
     Enum,
 }
 
-const PROXY_OBJECTS: &[ProxyObject] = &[
-    // values
-    proxy::<Value>(),
-    proxy::<Constrained>(),
-    // class
-    proxy::<BorderClass>(),
-    proxy::<ButtonClass>(),
-    proxy::<CheckboxClass>(),
-    proxy::<LabelClass>(),
-    proxy::<ProgressClass>(),
-    proxy::<SelectedClass>(),
-    proxy::<SliderClass>(),
-    proxy::<TodoClass>(),
-    proxy::<ToggleClass>(),
-    // enums
-    proxy::<Align>(),
-    proxy::<Aligned>(),
-    proxy::<Axis>(),
-    proxy::<Border>(),
-    proxy::<CrossAlign>(),
-    proxy::<Justify>(),
-];
-
-pub fn initialize(lua: &mlua::Lua) -> mlua::Result<()> {
-    PROXY_OBJECTS
-        .iter()
+pub(crate) fn initialize<'i>(
+    proxies: impl IntoIterator<Item = &'i ProxyObject>,
+    lua: &mlua::Lua,
+) -> mlua::Result<()> {
+    proxies
+        .into_iter()
         .try_for_each(|proxy| (proxy.create)(lua))
 }
 
-pub fn generate() -> String {
+pub fn generate<'a, 'b>(
+    proxies: &Proxies,
+    bindings: impl IntoIterator<Item = &'b (Binding, Indirect)>, // what do we do here?
+) -> String {
     use std::fmt::Write as _;
     let mut out = String::new();
 
@@ -136,9 +125,9 @@ pub fn generate() -> String {
     );
     _ = writeln!(&mut out);
 
-    for object in PROXY_OBJECTS {
+    for object in proxies {
         match object.kind {
-            Kind::Value => {
+            ProxyKind::Value => {
                 _ = writeln!(&mut out, "---@class (exact) {}", object.name);
                 let bindings = (object.bindings)();
                 for (binding, doc) in bindings {
@@ -147,7 +136,7 @@ pub fn generate() -> String {
                 _ = writeln!(&mut out, "{} = {{}}", object.name);
                 _ = writeln!(&mut out);
             }
-            Kind::Enum => {
+            ProxyKind::Enum => {
                 if let Some(style) = object.style {
                     _ = writeln!(&mut out, "---@class (exact) {}Style", object.name);
                     for (field, ty, doc) in (style)() {
@@ -176,7 +165,8 @@ pub fn generate() -> String {
         }
     }
 
-    for (.., binding) in Mapping::DEFAULT_TOO_BINDINGS {
+    let bindings = bindings.into_iter().collect::<Vec<_>>();
+    for (binding, ..) in &bindings {
         _ = writeln!(
             &mut out,
             "---@class {name} {doc}",
@@ -196,7 +186,7 @@ pub fn generate() -> String {
     }
 
     _ = writeln!(&mut out, "---@class ui");
-    for (.., binding) in Mapping::DEFAULT_TOO_BINDINGS {
+    for (binding, ..) in bindings {
         let args = match binding.args {
             Some(args) => Cow::Owned(format!("args: {args}")),
             None => Cow::Borrowed(""),

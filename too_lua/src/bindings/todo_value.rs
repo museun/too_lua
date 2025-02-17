@@ -1,10 +1,45 @@
 use too::view::{Ui, ViewExt as _};
 
 use crate::{
+    bindings::Value,
     mapping::{Binding, Field},
-    params::{self, Value},
     Context, Mapping,
 };
+
+use super::Color;
+
+crate::make_proxy! {
+    TodoParams {
+        class:
+        TodoClass is "Todo" {
+            /// The default style
+            Default  = "default" ; too::views::TodoStyle::default
+        }
+
+        manual style:
+        TodoStyle => too::views::TodoStyle {
+            /// When selected, the text should be bold
+            bold          = Option<bool> ; "boolean?"
+            /// When selected, the text should be faint
+            faint         = Option<bool> ; "boolean?"
+            /// When selected, the text should be italic
+            italic        = Option<bool> ; "boolean?"
+            /// When selected, the text should be underline
+            underline     = Option<bool> ; "boolean?"
+            /// When selected, the text should be blink
+            blink         = Option<bool> ; "boolean?"
+            /// When selected, the text should be reverse
+            reverse       = Option<bool> ; "boolean?"
+            /// When selected, the text should be strikeout
+            strikeout     = Option<bool> ; "boolean?"
+            //
+            /// The color of the text
+            text_color    = Option<Color> ; "Color?"
+            /// The color of the text, when hovered
+            hovered_color = Option<Color> ; "Color?"
+        }
+    }
+}
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct TodoValue;
@@ -25,7 +60,7 @@ impl TodoValue {
     }
 
     pub fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Ok(params) = ctx.params::<params::TodoParams>() else {
+        let Ok(params) = ctx.params::<TodoParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "todo", "params");
         };
 
@@ -49,7 +84,7 @@ impl TodoValue {
             .and_then(|class| {
                 #[allow(unreachable_patterns)]
                 let val = match class {
-                    params::TodoClass::Default => default,
+                    TodoClass::Default => default,
                     _ => return None,
                 };
                 Some(val)

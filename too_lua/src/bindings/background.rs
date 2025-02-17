@@ -2,8 +2,10 @@ use too::view::Ui;
 
 use crate::{
     mapping::{Binding, Field},
-    params, Context, Mapping,
+    Context, Mapping,
 };
+
+use super::Color;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Background;
@@ -18,7 +20,7 @@ impl Background {
     }
 
     pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(Ok(bg)) = ctx.params_field::<params::Color>("background") else {
+        let Some(Ok(bg)) = ctx.params_field::<Color>("background") else {
             return Mapping::report_missing_data(ui, ctx.id, "background", "bg");
         };
 

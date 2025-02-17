@@ -1,9 +1,46 @@
 use too::view::{Ui, ViewExt as _};
 
 use crate::{
+    bindings::Color,
     mapping::{Binding, Field},
-    params, Context, Mapping,
+    Context, Mapping,
 };
+
+crate::make_proxy! {
+    LabelParams {
+        class:
+        LabelClass is "Label" {
+            /// The default style
+            Default = "default" ; too::views::LabelStyle::default
+            /// Denotes this label is for information
+            Info    = "info"    ; too::views::LabelStyle::info
+            /// Denotes this label is for warning
+            Warning = "warning" ; too::views::LabelStyle::warning
+            /// Denotes this label is for success
+            Success = "success" ; too::views::LabelStyle::success
+            /// Denotes this label is for danger
+            Danger  = "danger"  ; too::views::LabelStyle::danger
+        }
+
+        manual style:
+        LabelStyle => too::views::LabelStyle {
+            /// The foreground text color
+            foreground = Option<Color> ; "Color?"
+            /// The text should be italic
+            italic     = Option<bool>  ; "boolean?"
+            /// The text should be bold
+            bold       = Option<bool>  ; "boolean?"
+            /// The text should be underline
+            underline  = Option<bool>  ; "boolean?"
+            /// The text should be faint
+            faint      = Option<bool>  ; "boolean?"
+            /// The text should be blink
+            blink      = Option<bool>  ; "boolean?"
+            /// The text should be strikeout
+            strikeout  = Option<bool>  ; "boolean?"
+        }
+    }
+}
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Label;
@@ -34,7 +71,7 @@ impl Label {
             return Mapping::report_missing_data(ui, ctx.id, "label", "text");
         };
 
-        let Ok(params) = ctx.params::<params::LabelParams>() else {
+        let Ok(params) = ctx.params::<LabelParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "label", "params");
         };
 
@@ -49,7 +86,7 @@ impl Label {
         let mut fg = None;
         if let Some(style) = params.style {
             profiling::scope!("label style");
-            if let Some(params::Color(new)) = style.foreground {
+            if let Some(Color(new)) = style.foreground {
                 fg = Some(new)
             }
 
@@ -80,10 +117,10 @@ impl Label {
             .and_then(|class| {
                 profiling::scope!("label class");
                 let val = match class {
-                    params::LabelClass::Info => too::views::LabelStyle::info,
-                    params::LabelClass::Warning => too::views::LabelStyle::warning,
-                    params::LabelClass::Success => too::views::LabelStyle::success,
-                    params::LabelClass::Danger => too::views::LabelStyle::danger,
+                    LabelClass::Info => too::views::LabelStyle::info,
+                    LabelClass::Warning => too::views::LabelStyle::warning,
+                    LabelClass::Success => too::views::LabelStyle::success,
+                    LabelClass::Danger => too::views::LabelStyle::danger,
                     _ => return None,
                 };
                 Some(val)

@@ -44,7 +44,7 @@ macro_rules! make_style {
         impl $name {
             pub fn merge_style(&self, style: &mut $style) {
                 $(
-                    $crate::params::merge(&mut style.$ident, &self.$ident);
+                    $crate::merge(&mut style.$ident, &self.$ident);
                 )*
             }
         }
@@ -139,8 +139,8 @@ macro_rules! make_class {
             }
         }
 
-        impl $crate::params::Proxy for $kind {
-            const KIND: $crate::params::Kind = $crate::params::Kind::Enum;
+        impl $crate::Proxy for $kind {
+            const KIND: $crate::ProxyKind = $crate::ProxyKind::Enum;
             const NAME: &'static str = $name;
             const STYLE: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]> = None;
 
@@ -170,8 +170,8 @@ macro_rules! make_class {
             }
         }
 
-        impl crate::params::Proxy for $kind {
-            const KIND: crate::params::Kind = crate::params::Kind::Enum;
+        impl $crate::Proxy for $kind {
+            const KIND: $crate::ProxyKind = $crate::ProxyKind::Enum;
             const NAME: &'static str = $name;
             const STYLE: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]> = Some(move|| {
                 &[ $((stringify!($style_ident), $lua_ty, $style_doc)),* ]
@@ -334,13 +334,13 @@ macro_rules! make_proxy {
             }
     }) => {
         impl $params_ident {
-            pub fn apply(self) -> impl Fn(&Palette, StyleOptions<<$proxy_name as Style>::Args>) -> $proxy_name {
+            pub fn apply(self) -> impl Fn(&too::view::Palette, too::view::StyleOptions<<$proxy_name as too::view::Style>::Args>) -> $proxy_name {
                 move |palette, options| {
                     let mut default = match self.class {
                         $(
                             Some($class_ident::$variant) => $style_func(palette, options),
                         )*
-                        None => Style::default(palette, options)
+                        None => too::view::Style::default(palette, options)
                     };
 
                     if let Some(style) = &self.style {

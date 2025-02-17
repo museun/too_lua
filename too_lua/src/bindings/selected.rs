@@ -1,10 +1,37 @@
-use too::view::{Ui, ViewExt as _};
+use too::view::{Style as _, Ui, ViewExt as _};
 
 use crate::{
     mapping::{Binding, Field},
-    params::{self, Value},
     Context, Mapping,
 };
+
+use super::{Color, Value};
+
+make_proxy! {
+    SelectedParams {
+        class:
+        SelectedClass is "Selected" {
+            /// The default style
+            Default  = "default" ; too::views::SelectedStyle::default
+            /// This element reacts to hovers
+            Hovered  = "hovered" ; too::views::SelectedStyle::hovered
+        }
+
+        style:
+        SelectedStyle => too::views::SelectedStyle {
+            /// The background color
+            background          = Option<Color> ; "Color?"
+            /// The text color
+            text_color          = Option<Color> ; "Color?"
+            /// The background color, when selected
+            selected_background = Option<Color> ; "Color?"
+            /// The text color, when hovered
+            hovered_text        = Option<Color> ; "Color?"
+            /// The background color, when hovered
+            hovered_background  = Option<Color> ; "Color?"
+        }
+    }
+}
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Selected;
@@ -25,7 +52,7 @@ impl Selected {
     }
 
     pub fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Ok(params) = ctx.params::<params::SelectedParams>() else {
+        let Ok(params) = ctx.params::<SelectedParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "selected", "params");
         };
 

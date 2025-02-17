@@ -2,8 +2,10 @@ use std::borrow::Cow;
 
 use too::renderer::Rgba;
 
-use super::Color;
+use crate::bindings::Color;
 
+// TODO maybe support mlua::String
+// this'll involve Extrat being generic over R rather than as an associated type
 pub trait Extract {
     type R;
     fn extract(&mut self, right: &Self::R);

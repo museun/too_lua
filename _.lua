@@ -1,9 +1,5 @@
 ---@alias Color string #RGB | #RGBA | #RRGGBB | #RRGGBBAA hex string
 
----@class (exact) Value
----@field new fun(value: any): Value create a new value
-Value = {}
-
 ---@class (exact) Constraint
 ---@field exact_size fun(w: integer, h: integer): Constraint The view has an exact size
 ---@field exact_height fun(h: integer): Constraint The view has an exact height
@@ -15,6 +11,50 @@ Value = {}
 ---@field min_width fun(w: integer): Constraint The view has a min width
 ---@field min_height fun(h: integer): Constraint The view has a min height
 Constraint = {}
+
+---@class (exact) Value
+---@field new fun(value: any): Value create a new value
+Value = {}
+
+---@enum Align
+Align = {
+    ---  Align to the start of the area
+    min    = 0,
+    ---  Align to the middle of the area
+    middle = 1,
+    ---  Align to the end of the area
+    max    = 2,
+}
+
+---@enum Aligned
+Aligned = {
+    ---  Align to the horizontal left and vertical top
+    left_top      = 0,
+    ---  Align to the horizontal center and vertical top
+    center_top    = 1,
+    ---  Align to the horizontal right and vertical top
+    right_top     = 2,
+    ---  Align to the horizontal left and vertical center
+    left_center   = 3,
+    ---  Align to the horizontal center and vertical center
+    center        = 4,
+    ---  Align to the horizontal right and vertical center
+    right_center  = 5,
+    ---  Align to the horizontal left and vertical bottom
+    left_bottom   = 6,
+    ---  Align to the horizontal center and vertical bottom
+    center_bottom = 7,
+    ---  Align to the horizontal right and vertical bottom
+    right_bottom  = 8,
+}
+
+---@enum Axis
+Axis = {
+    ---  The vertical axis
+    vertical   = 0,
+    ---  The horizontal axis
+    horizontal = 1,
+}
 
 ---@class (exact) BorderStyle
 ---@field title Color?  The frame title color
@@ -29,6 +69,26 @@ Border = {
     default     = 0,
     ---  An interactive style
     interactive = 1,
+}
+
+---@enum BorderKind
+BorderKind = {
+    ---  No border
+    empty      = 0,
+    ---  A thin border
+    thin       = 1,
+    ---  A thin, but wide border
+    thin_wide  = 2,
+    ---  A rounded border
+    rounded    = 3,
+    ---  A double-line border
+    double     = 4,
+    ---  A thick border
+    thick      = 5,
+    ---  A thick, but tall border
+    thick_tall = 6,
+    ---  A thick, but wide border
+    thick_wide = 7,
 }
 
 ---@class (exact) ButtonStyle
@@ -65,6 +125,36 @@ Checkbox = {
     markdown = 1,
     ---  An ascii checkbox style
     ascii    = 2,
+}
+
+---@enum CrossAlign
+CrossAlign = {
+    ---  Alignment begins at the 'start' of the area
+    min     = 0,
+    ---  Alignment begins at the 'end' of the area
+    max     = 1,
+    ---  Alignment is in the middle, extra space is applied before and after
+    center  = 2,
+    ---  The elements stretch to fill the area
+    stretch = 3,
+    ---  The elements fill the entire area
+    fill    = 4,
+}
+
+---@enum Justify
+Justify = {
+    ---  The extra space is applied to the end
+    min           = 0,
+    ---  The extra space is applied to the start
+    max           = 1,
+    ---  The extra space is applied to the start and end
+    center        = 2,
+    ---  Place the space between the elements
+    space_between = 3,
+    ---  Place the space around the elements
+    space_around  = 4,
+    ---  Evenly space the elements
+    space_evenly  = 5,
 }
 
 ---@class (exact) LabelStyle
@@ -203,96 +293,6 @@ Toggle = {
     small_square  = 4,
 }
 
----@enum Align
-Align = {
-    ---  Align to the start of the area
-    min    = 0,
-    ---  Align to the middle of the area
-    middle = 1,
-    ---  Align to the end of the area
-    max    = 2,
-}
-
----@enum Aligned
-Aligned = {
-    ---  Align to the horizontal left and vertical top
-    left_top      = 0,
-    ---  Align to the horizontal center and vertical top
-    center_top    = 1,
-    ---  Align to the horizontal right and vertical top
-    right_top     = 2,
-    ---  Align to the horizontal left and vertical center
-    left_center   = 3,
-    ---  Align to the horizontal center and vertical center
-    center        = 4,
-    ---  Align to the horizontal right and vertical center
-    right_center  = 5,
-    ---  Align to the horizontal left and vertical bottom
-    left_bottom   = 6,
-    ---  Align to the horizontal center and vertical bottom
-    center_bottom = 7,
-    ---  Align to the horizontal right and vertical bottom
-    right_bottom  = 8,
-}
-
----@enum Axis
-Axis = {
-    ---  The vertical axis
-    vertical   = 0,
-    ---  The horizontal axis
-    horizontal = 1,
-}
-
----@enum BorderKind
-BorderKind = {
-    ---  No border
-    empty      = 0,
-    ---  A thin border
-    thin       = 1,
-    ---  A thin, but wide border
-    thin_wide  = 2,
-    ---  A rounded border
-    rounded    = 3,
-    ---  A double-line border
-    double     = 4,
-    ---  A thick border
-    thick      = 5,
-    ---  A thick, but tall border
-    thick_tall = 6,
-    ---  A thick, but wide border
-    thick_wide = 7,
-}
-
----@enum CrossAlign
-CrossAlign = {
-    ---  Alignment begins at the 'start' of the area
-    min     = 0,
-    ---  Alignment begins at the 'end' of the area
-    max     = 1,
-    ---  Alignment is in the middle, extra space is applied before and after
-    center  = 2,
-    ---  The elements stretch to fill the area
-    stretch = 3,
-    ---  The elements fill the entire area
-    fill    = 4,
-}
-
----@enum Justify
-Justify = {
-    ---  The extra space is applied to the end
-    min           = 0,
-    ---  The extra space is applied to the start
-    max           = 1,
-    ---  The extra space is applied to the start and end
-    center        = 2,
-    ---  Place the space between the elements
-    space_between = 3,
-    ---  Place the space around the elements
-    space_around  = 4,
-    ---  Evenly space the elements
-    space_evenly  = 5,
-}
-
 ---@class aligned  Align its children at a specific anchor
 ---@field align Aligned  Alignment for the children
 
@@ -374,9 +374,6 @@ Justify = {
 
 ---@class separator  Separator to divide some area
 
----@class toggle  Conditionally show or hide a view
----@field value Value  The boolean state to use
-
 ---@class slider  A slider to adjust a value
 ---@field style SliderStyle?  The style of the slider
 ---@field class Slider?  The class of the slider
@@ -388,6 +385,9 @@ Justify = {
 ---@field class Todo?  The class of the selected value
 ---@field text string  The text of the selected value
 ---@field value Value  The state of the selected value, a boolean
+
+---@class toggle  Conditionally show or hide a view
+---@field value Value  The boolean state to use
 
 ---@class toggle_switch  A switch that is toggled when clicked
 ---@field style ToggleStyle?  The style of the selected value
@@ -422,10 +422,10 @@ Justify = {
 ---@field progress fun(args: Value | progress): nil  A progress bar
 ---@field selected fun(args: selected): nil  A selected boolean value
 ---@field separator fun(): nil  Separator to divide some area
----@field toggle fun(args: toggle): nil  Conditionally show or hide a view
 ---@field slider fun(args: Value | slider): nil  A slider to adjust a value
 ---@field todo_value fun(args: todo_value): nil  A selected value
----@field toggle_switch fun(args: toggle_switch): nil  A switch that is toggled when clicked
+---@field toggle fun(args: toggle): nil  Conditionally show or hide a view
+---@field toggle_switch fun(args: Value | toggle_switch): nil  A switch that is toggled when clicked
 ---@field unconstrained fun(args: unconstrained): nil  Specifically unconstrained a view
 ---@field vertical fun(args: vertical): nil  Vertical layout of children
 ui = { }

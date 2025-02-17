@@ -2,9 +2,10 @@ use too::view::Ui;
 
 use crate::{
     mapping::{Binding, Field},
-    params::Value,
     Context, Mapping,
 };
+
+use super::Value;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Toggle;

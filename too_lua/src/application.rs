@@ -14,7 +14,7 @@ use too::{
 };
 
 use crate::{
-    Context, Errors, Mapping, Script, Tree, {Notification, Notifications},
+    Bindings, Context, Errors, Mapping, Notification, Notifications, Proxies, Script, Tree,
 };
 
 pub struct Unit;
@@ -26,6 +26,8 @@ pub struct Application<T = Unit> {
     timeout: Option<Duration>,
     reload: Option<Keybind>,
     config: RunConfig,
+    proxies: Proxies,
+    bindings: Bindings,
 }
 
 impl Application<Unit> {
@@ -36,6 +38,8 @@ impl Application<Unit> {
             timeout: None,
             reload: None,
             config: RunConfig::default(),
+            proxies: Proxies::default(),
+            bindings: Bindings::default(),
         }
     }
 
@@ -49,6 +53,8 @@ impl Application<Unit> {
             timeout: self.timeout,
             reload: self.reload,
             config: self.config,
+            proxies: self.proxies,
+            bindings: self.bindings,
         }
     }
 }
@@ -72,6 +78,16 @@ where
         self
     }
 
+    pub fn with_proxies(mut self, proxies: Proxies) -> Self {
+        self.proxies = proxies;
+        self
+    }
+
+    pub fn with_bindings(mut self, bindings: Bindings) -> Self {
+        self.bindings = bindings;
+        self
+    }
+
     pub fn run(self) -> std::io::Result<()> {
         let lua = mlua::Lua::new();
         lua.set_app_data(Tree::new(&lua).unwrap());
@@ -88,7 +104,7 @@ where
         });
         lua.globals().set("debug", debug).unwrap();
 
-        crate::params::initialize(&lua).unwrap();
+        crate::proxy::initialize(&self.proxies, &lua).unwrap();
 
         // TODO make this fail less hard
         let mut script = match Script::new(self.path, self.timeout, &lua) {
@@ -104,7 +120,7 @@ where
             return Err(std::io::Error::other(err.to_string()));
         }
 
-        let mapping = Mapping::too_bindings();
+        let mapping = Mapping::from_bindings(self.bindings);
 
         let mut errors = Errors::default();
         let mut notifications = Notifications::default();

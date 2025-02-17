@@ -2,7 +2,7 @@ use mlua::{AnyUserData, FromLua, UserDataRef, UserDataRefMut};
 use too::{layout::Axis, view::Ui};
 
 use crate::{
-    params::{self, Value},
+    bindings::{self, Value},
     LuaId, Node, Tree,
 };
 
@@ -52,10 +52,10 @@ impl<'a> Context<'a> {
     pub fn axis(&self) -> Axis {
         match self
             .params_field_opt("axis")
-            .unwrap_or(params::Axis::Horizontal)
+            .unwrap_or(bindings::Axis::Horizontal)
         {
-            params::Axis::Vertical => Axis::Vertical,
-            params::Axis::Horizontal => Axis::Horizontal,
+            bindings::Axis::Vertical => Axis::Vertical,
+            bindings::Axis::Horizontal => Axis::Horizontal,
         }
     }
 

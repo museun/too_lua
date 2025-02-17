@@ -1,9 +1,37 @@
-use too::view::{Ui, ViewExt as _};
+use too::view::{Style as _, Ui, ViewExt as _};
 
 use crate::{
     mapping::{Binding, Field},
-    params, Context, Mapping,
+    Context, Mapping,
 };
+
+use super::Color;
+
+crate::make_proxy! {
+    ButtonParams {
+        class:
+        ButtonClass is "Button" {
+            /// The default style
+            Default = "default" ; too::views::ButtonStyle::default
+            /// Denotes this button is for success
+            Success = "success" ; too::views::ButtonStyle::success
+            /// Denotes this button is for information
+            Info    = "info"    ; too::views::ButtonStyle::info
+            /// Denotes this button is for warning
+            Warning = "warning" ; too::views::ButtonStyle::warning
+            /// Denotes this button is for danger
+            Danger  = "danger"  ; too::views::ButtonStyle::danger
+        }
+
+        style:
+        ButtonStyle => too::views::ButtonStyle {
+            /// The button text color
+            text_color = Option<Color> ; "Color?"
+            /// The button background color
+            background = Option<Color> ; "Color?"
+        }
+    }
+}
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Button;
@@ -24,7 +52,7 @@ impl Button {
     }
 
     pub fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Ok(params) = ctx.params::<params::ButtonParams>() else {
+        let Ok(params) = ctx.params::<ButtonParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "button", "params");
         };
 
