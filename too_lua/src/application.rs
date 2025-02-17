@@ -182,6 +182,11 @@ where
                     return Ok(true);
                 }
 
+                if let Err(err) = script.update(&lua) {
+                    errors.handle_lua_error("cannot evaluate", err);
+                    return Ok(true);
+                }
+
                 notifications.push(Notification::new(
                     "loaded new script",
                     Duration::from_secs(3),
@@ -193,11 +198,6 @@ where
                 surface.update(&ev);
                 state.event(&ev);
                 should_render = true;
-            }
-
-            if let Err(err) = script.update(&lua) {
-                errors.handle_lua_error("cannot evaluate", err);
-                return Ok(true);
             }
 
             state.build(surface.rect(), |ui| {

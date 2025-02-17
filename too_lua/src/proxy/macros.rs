@@ -101,7 +101,7 @@ macro_rules! make_class {
                         value.type_name()
                     )));
                 };
-                ud.take()
+                ud.borrow::<Self>().map(|c| *c)
             }
         }
 
@@ -375,7 +375,7 @@ macro_rules! make_proxy {
 
         impl mlua::FromLua for $params_ident {
             fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-                let Some(table) = value.as_table() else {
+                let mlua::Value::Table(table) = value else {
                     return Err(mlua::Error::runtime(format!("expected a table, got {}", value.type_name())));
                 };
 
