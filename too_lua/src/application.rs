@@ -235,6 +235,25 @@ where
         });
         lua.globals().set("debug", debug).unwrap();
 
+        let require = match lua.globals().get::<mlua::Function>("require") {
+            Ok(require) => require,
+            Err(err) => panic!("oops: {err}"),
+        };
+
+        let loaded = lua.create_table().unwrap();
+        lua.globals().set("__TOO_LOADED", loaded).unwrap();
+
+        let require = lua
+            .create_function(move |lua, name: mlua::String| {
+                lua.globals()
+                    .get::<mlua::Table>("__TOO_LOADED")?
+                    .set(&name, true)?;
+                require.call::<mlua::Value>(name)
+            })
+            .unwrap();
+
+        lua.globals().set("require", require).unwrap();
+
         crate::proxy::initialize(proxies, &lua).unwrap();
         lua
     }

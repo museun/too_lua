@@ -34,7 +34,6 @@ impl Script {
         let data = std::fs::read_to_string(&path)?;
 
         let (tx, events) = std::sync::mpsc::channel();
-
         Ok(Self {
             update: lua.load(data).eval()?,
             events,
@@ -50,6 +49,7 @@ impl Script {
     }
 
     pub fn reload_source(&mut self, source: &str, lua: &mlua::Lua) -> mlua::Result<()> {
+        Self::reset_loaded(lua);
         self.update = lua.load(source).eval()?;
         Ok(())
     }
@@ -63,11 +63,32 @@ impl Script {
         self.events.try_recv().is_ok()
     }
 
+    fn reset_loaded(lua: &mlua::Lua) {
+        let Ok(modules) = lua.globals().get::<mlua::Table>("__TOO_LOADED") else {
+            return;
+        };
+
+        let Ok(package) = lua.globals().get::<mlua::Table>("package") else {
+            return;
+        };
+
+        let Ok(loaded) = package.get::<mlua::Table>("loaded") else {
+            return;
+        };
+
+        for (k, _) in modules.pairs::<mlua::String, mlua::Value>().flatten() {
+            let _ = modules.set(&k, "false");
+            let _ = loaded.set(k, false);
+        }
+    }
+
     fn watch_for_changes(
         tx: std::sync::mpsc::Sender<()>,
         path: PathBuf,
         timeout: Duration,
     ) -> std::thread::JoinHandle<()> {
+        // FIXME use notify here
+        //
         // TODO if we're going to support require we should read all of the
         // files in the dir and sort by the their modified time
         fn last_modified(path: &Path) -> Option<SystemTime> {
