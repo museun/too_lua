@@ -510,6 +510,7 @@ dependencies = [
 [[package]]
 name = "too"
 version = "0.2.0"
+source = "git+https://github.com/museun/too?branch=too_lua#18f4eb13eb124288f67b650011b89942be1690bb"
 dependencies = [
  "compact_str",
  "crossterm",

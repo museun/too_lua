@@ -11,5 +11,5 @@ resolver = "2"
 # [profile.dev.package.slotmap]
 # opt-level = 3
 
-[patch.'https://github.com/museun/too']
-too = { path = "../too" }
+# [patch.'https://github.com/museun/too']
+# too = { path = "../too" }
