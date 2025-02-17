@@ -1,7 +1,6 @@
 use std::time::{Duration, Instant};
 
 use too::{
-    layout::Anchor2,
     math::{inverse_lerp, lerp, pos2, vec2, Rect},
     renderer::{Pixel, Surface},
     view::{CroppedSurface, Palette},
@@ -25,7 +24,6 @@ impl Notification {
 
 pub struct Notifications {
     notifications: Vec<Notification>,
-    anchor: Anchor2,
 }
 
 impl Default for Notifications {
@@ -38,13 +36,7 @@ impl Notifications {
     pub fn new() -> Self {
         Self {
             notifications: Vec::new(),
-            anchor: Anchor2::RIGHT_BOTTOM,
         }
-    }
-
-    pub fn anchor(mut self, anchor: Anchor2) -> Self {
-        self.anchor = anchor;
-        self
     }
 
     pub fn push(&mut self, notification: Notification) {

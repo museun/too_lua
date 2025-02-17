@@ -144,7 +144,7 @@ where
         let mut should_render = false;
         let mut last_resize = None;
 
-        run_loop(fps, |fr, dt| {
+        run_loop(fps, |_fr, dt| {
             profiling::finish_frame!();
             state.update(dt);
 

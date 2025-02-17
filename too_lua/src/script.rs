@@ -16,7 +16,7 @@ pub struct Script {
 
 impl Script {
     pub fn from_source(source: &str, lua: &mlua::Lua) -> mlua::Result<Self> {
-        let (tx, events) = std::sync::mpsc::channel();
+        let (_tx, events) = std::sync::mpsc::channel();
         Ok(Self {
             update: lua.load(source).eval()?,
             events,
