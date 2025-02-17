@@ -89,22 +89,12 @@ where
     }
 
     pub fn run(self) -> std::io::Result<()> {
-        let lua = mlua::Lua::new();
-        lua.set_app_data(Tree::new(&lua).unwrap());
-
+        let lua = Self::init_lua(&self.proxies);
         if let Some(user_data) = self.user_data {
             lua.globals()
                 .set("__USER_STATE", user_data)
                 .expect("create user state")
         }
-
-        let debug = mlua::Function::wrap(|data: String| {
-            debug(data);
-            Ok(())
-        });
-        lua.globals().set("debug", debug).unwrap();
-
-        crate::proxy::initialize(&self.proxies, &lua).unwrap();
 
         // TODO make this fail less hard
         let mut script = match Script::new(self.path, self.timeout, &lua) {
@@ -200,6 +190,8 @@ where
                 should_render = true;
             }
 
+            if lua.app_data_mut::<Tree>().unwrap().evaluate_lazies() {}
+
             state.build(surface.rect(), |ui| {
                 let tree = lua.app_data_ref::<Tree>().unwrap();
                 let ctx = Context::new(
@@ -213,13 +205,7 @@ where
                 mapping.evaluate(ui, ctx);
             });
 
-            if let Err(err) = script.update(&lua) {
-                errors.handle_lua_error("cannot evaluate", err);
-                return Ok(true);
-            }
-
-            let mut rasterizer = CroppedSurface::new(surface.rect(), &mut surface);
-            state.render(&mut rasterizer);
+            state.render(&mut CroppedSurface::new(surface.rect(), &mut surface));
 
             notifications.render(0, &state.palette(), &mut surface);
             errors.render(&mut surface);
@@ -228,6 +214,29 @@ where
 
             Ok(true)
         })
+    }
+
+    fn init_lua(proxies: &Proxies) -> mlua::Lua {
+        let lua = mlua::Lua::new();
+        lua.set_app_data(Tree::new(&lua).unwrap());
+
+        let lazy = lua
+            .create_function(|lua, data: mlua::Table| {
+                let lazy = data.get::<mlua::Function>(1)?;
+                lua.app_data_mut::<Tree>().unwrap().add_lazy(lazy);
+                Ok(())
+            })
+            .unwrap();
+        lua.globals().set("lazy", lazy).unwrap();
+
+        let debug = mlua::Function::wrap(|data: String| {
+            debug(data);
+            Ok(())
+        });
+        lua.globals().set("debug", debug).unwrap();
+
+        crate::proxy::initialize(proxies, &lua).unwrap();
+        lua
     }
 }
 

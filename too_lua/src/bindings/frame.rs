@@ -22,7 +22,7 @@ impl Frame {
            /// Alignment for the title
            align "Align?"
            /// A string to place in the title
-           title "string"
+           title "string | lazy_args"
         }
     }
 

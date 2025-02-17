@@ -61,7 +61,7 @@ impl Mapping {
         let Some(func) = self.map.get(name) else {
             ui.label(format_str!(
                 "cannot find: {name}/{id:?}",
-                name = &ctx.tree.names[ctx.id],
+                name = &ctx.tree.names[ctx.id].to_string_lossy(),
                 id = ctx.id.data()
             ));
             return;

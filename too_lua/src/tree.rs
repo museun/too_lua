@@ -30,7 +30,8 @@ impl Node {
 pub struct Tree {
     pub(crate) root: LuaId,
     pub(crate) map: SlotMap<LuaId, Node>,
-    pub(crate) names: SecondaryMap<LuaId, String>,
+    pub(crate) names: SecondaryMap<LuaId, mlua::String>,
+    pub(crate) lazies: SecondaryMap<LuaId, mlua::Function>,
 
     stack: Vec<LuaId>,
     proxy: mlua::Table,
@@ -50,13 +51,14 @@ impl Tree {
         let root = map.insert(Node::new(root_name.clone(), None));
 
         let mut names = SecondaryMap::new();
-        names.insert(root, root_name.to_string_lossy());
+        names.insert(root, root_name);
 
         Ok(Self {
             root,
 
             map,
             names,
+            lazies: SecondaryMap::new(),
 
             stack: vec![root],
             proxy: table,
@@ -65,11 +67,65 @@ impl Tree {
 }
 
 impl Tree {
+    pub(super) fn evaluate_lazies(&mut self) -> bool {
+        let mut seen = false;
+
+        for (k, v) in &self.lazies {
+            match &mut self.map[k].data {
+                mlua::Value::Table(table) => match table.get::<mlua::String>("text") {
+                    Ok(text) => {
+                        let Ok(data) = v.call::<mlua::String>(()) else {
+                            continue;
+                        };
+                        if text != data {
+                            let _ = table.set("text", data);
+                            seen = true;
+                        }
+                    }
+                    _ => {
+                        let Ok(data) = v.call::<mlua::String>(()) else {
+                            continue;
+                        };
+                        let _ = table.set("text", data);
+                        seen = true
+                    }
+                },
+
+                this @ mlua::Value::Nil => {
+                    let Ok(data) = v.call::<mlua::Value>(()) else {
+                        continue;
+                    };
+                    *this = data;
+                    seen = true;
+                }
+
+                mlua::Value::String(string) => {
+                    let Ok(data) = v.call::<mlua::String>(()) else {
+                        continue;
+                    };
+                    if *string == data {
+                        continue;
+                    }
+                    self.map[k].data = mlua::Value::String(data);
+                    seen = true;
+                }
+
+                _ => {}
+            }
+        }
+        seen
+    }
+
+    pub(super) fn add_lazy(&mut self, function: mlua::Function) {
+        let current = *self.stack.last().unwrap_or(&self.root);
+        self.lazies.insert(current, function);
+    }
+
     fn proxy(&mut self, name: mlua::String) -> mlua::Result<mlua::Value> {
         let pid = self.stack.last().copied();
         let id = self.map.insert(Node::new(name.clone(), pid));
 
-        self.names.insert(id, name.to_string_lossy());
+        self.names.insert(id, name);
         if self.root.is_null() {
             self.root = id
         }
@@ -158,7 +214,10 @@ impl Tree {
 
 impl std::fmt::Debug for Tree {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        struct DebugSlotMap<'a>(&'a SlotMap<LuaId, Node>, &'a SecondaryMap<LuaId, String>);
+        struct DebugSlotMap<'a>(
+            &'a SlotMap<LuaId, Node>,
+            &'a SecondaryMap<LuaId, mlua::String>,
+        );
 
         impl std::fmt::Debug for DebugSlotMap<'_> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -176,7 +235,7 @@ impl std::fmt::Debug for Tree {
 
                 let mut map = f.debug_map();
                 for (k, v) in self.0 {
-                    map.entry(&k.data(), &Resolved(v, &self.1[k]));
+                    map.entry(&k.data(), &Resolved(v, &self.1[k].to_string_lossy()));
                 }
                 map.finish()
             }
@@ -231,7 +290,7 @@ impl DebugNode {
             }
             let node = DebugNode {
                 id,
-                name: tree.names[id].clone(),
+                name: tree.names[id].to_string_lossy(),
                 data: node.data.clone(),
                 children,
             };
@@ -246,7 +305,7 @@ impl DebugNode {
 
         Self {
             id: tree.root,
-            name: tree.names[tree.root].clone(),
+            name: tree.names[tree.root].to_string_lossy(),
             data: node.data.clone(),
             children,
         }

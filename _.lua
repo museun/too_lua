@@ -1,5 +1,10 @@
 ---@alias Color string #RGB | #RGBA | #RRGGBB | #RRGGBBAA hex string
 
+---@type fun(func: table<fun(): string>) lazily generate a string
+---@diagnostic disable-next-line: lowercase-global
+lazy = function(func) end
+---@alias lazy_args nil
+
 ---@class (exact) Constraint
 ---@field exact_size fun(w: integer, h: integer): Constraint The view has an exact size
 ---@field exact_height fun(h: integer): Constraint The view has an exact height
@@ -310,7 +315,7 @@ Toggle = {
 ---@class button  A button to click
 ---@field style ButtonStyle?  The style of the button
 ---@field class Button?  The class of the button
----@field text string  The text of the button
+---@field text string | lazy_args  The text of the button
 ---@field handler fun(): nil  Function to call when the button is clicked
 
 ---@class center  Center a view in the current layout
@@ -318,7 +323,7 @@ Toggle = {
 ---@class checkbox  A checkbox to toggle a boolean
 ---@field style CheckboxStyle?  The style of the checkbox
 ---@field class Checkbox?  The class of the checkbox
----@field text string  The text of the checkbox
+---@field text string | lazy_args  The text of the checkbox
 ---@field value Value  The state of the checkbox, a boolean
 
 ---@class constrained  Specifically constrain a view
@@ -341,7 +346,7 @@ Toggle = {
 ---@field class Border?  The class of the frame
 ---@field border BorderKind  The border to use
 ---@field align Align?  Alignment for the title
----@field title string  A string to place in the title
+---@field title string | lazy_args  A string to place in the title
 
 ---@class horizontal  Horizontal layout of children
 ---@field justify Justify?  Justification for children on the horizontal axis
@@ -352,7 +357,7 @@ Toggle = {
 ---@class label  Label displays some text
 ---@field style LabelStyle?  The style of the label
 ---@field class Label?  The class of the label
----@field text string  The text of the label
+---@field text string | lazy_args  The text of the label
 
 ---@class margin  Margin applies padding to a view
 ---@field left integer?  Padding to the left of the view
@@ -372,7 +377,7 @@ Toggle = {
 ---@class selected  A selected boolean value
 ---@field style SelectedStyle?  The style of the selected value
 ---@field class Selected?  The class of the selected value
----@field text string  The text of the selected value
+---@field text string | lazy_args  The text of the selected value
 ---@field value Value  The state of the selected value, a boolean
 
 ---@class separator  Separator to divide some area
@@ -386,7 +391,7 @@ Toggle = {
 ---@class todo_value  A selected value
 ---@field style TodoStyle?  The style of the selected value
 ---@field class Todo?  The class of the selected value
----@field text string  The text of the selected value
+---@field text string | lazy_args  The text of the selected value
 ---@field value Value  The state of the selected value, a boolean
 
 ---@class toggle  Conditionally show or hide a view
@@ -420,7 +425,7 @@ Toggle = {
 ---@field flex fun(args: flex): nil  Give a flex constraint to its children
 ---@field frame fun(args: frame): nil  Frame is a border with a title
 ---@field horizontal fun(args: horizontal): nil  Horizontal layout of children
----@field label fun(args: string | label): nil  Label displays some text
+---@field label fun(args: string | lazy_args | label): nil  Label displays some text
 ---@field margin fun(args: margin): nil  Margin applies padding to a view
 ---@field progress fun(args: Value | progress): nil  A progress bar
 ---@field selected fun(args: selected): nil  A selected boolean value

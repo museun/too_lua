@@ -45,7 +45,7 @@ impl Button {
             /// The class of the button
             class "Button?"
             /// The text of the button
-            text "string"
+            text "string | lazy_args"
             /// Function to call when the button is clicked
             handler "fun(): nil"
         }

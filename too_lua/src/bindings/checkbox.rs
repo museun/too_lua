@@ -45,7 +45,7 @@ impl Checkbox {
             /// The class of the checkbox
             class "Checkbox?"
             /// The text of the checkbox
-            text "string"
+            text "string | lazy_args"
             /// The state of the checkbox, a boolean
             value "Value"
         }

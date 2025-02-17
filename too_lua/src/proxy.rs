@@ -112,13 +112,22 @@ pub(crate) fn initialize<'i>(
         .try_for_each(|proxy| (proxy.create)(lua))
 }
 
-pub fn generate<'a, 'b>(proxies: &Proxies, bindings: &Bindings) -> String {
+pub fn generate(proxies: &Proxies, bindings: &Bindings) -> String {
     use std::fmt::Write as _;
     let mut out = String::new();
 
     _ = writeln!(
         &mut out,
         "---@alias Color string #RGB | #RGBA | #RRGGBB | #RRGGBBAA hex string"
+    );
+    _ = writeln!(&mut out);
+
+    _ = writeln!(
+        &mut out,
+        "---@type fun(func: table<fun(): string>) lazily generate a string\n\
+        ---@diagnostic disable-next-line: lowercase-global\n\
+        lazy = function(func) end\n\
+        ---@alias lazy_args nil"
     );
     _ = writeln!(&mut out);
 

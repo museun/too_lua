@@ -48,13 +48,13 @@ pub struct Label;
 impl Label {
     binding! {
         /// Label displays some text
-        "label" => "string | label" {
+        "label" => "string | lazy_args | label" {
             /// The style of the label
             style "LabelStyle?"
             /// The class of the label
             class "Label?"
             /// The text of the label
-            text "string"
+            text "string | lazy_args"
         }
     }
 
