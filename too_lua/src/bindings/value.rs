@@ -15,6 +15,78 @@ pub enum Value {
 }
 
 impl Value {
+    pub fn bool_ref(&self) -> Option<&bool> {
+        match self {
+            Self::Bool(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn bool_mut(&mut self) -> Option<&mut bool> {
+        match self {
+            Self::Bool(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn float_ref(&self) -> Option<&f32> {
+        match self {
+            Self::Float(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn float_mut(&mut self) -> Option<&mut f32> {
+        match self {
+            Self::Float(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn signed_ref(&self) -> Option<&isize> {
+        match self {
+            Self::Signed(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn signed_mut(&mut self) -> Option<&mut isize> {
+        match self {
+            Self::Signed(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn unsigned_ref(&self) -> Option<&usize> {
+        match self {
+            Self::Unsigned(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn unsigned_mut(&mut self) -> Option<&mut usize> {
+        match self {
+            Self::Unsigned(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn string_ref(&self) -> Option<&String> {
+        match self {
+            Self::String(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn string_mut(&mut self) -> Option<&mut String> {
+        match self {
+            Self::String(v) => Some(v),
+            _ => None,
+        }
+    }
+}
+
+impl Value {
     const GLOBAL_KEY: &'static str = "__TOO_VALUES";
 }
 

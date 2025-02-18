@@ -4,10 +4,10 @@ use too::view::{Style as _, Ui, ViewExt as _};
 use crate::{
     mapping::{BindingSpec, BindingView},
     proxy::Params,
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
-use super::{Axis, Color, Value};
+use super::{Axis, Color};
 
 make_class! {
     class SliderClass is "Slider" ; too::views::SliderStyle {
@@ -74,26 +74,28 @@ pub struct Slider;
 impl BindingView for Slider {
     const SPEC: BindingSpec = binding! {
         /// A slider to adjust a value
-        "slider" => SliderParams::NAME
+        "slider" => "SliderParams"
     };
     type Params = SliderParams;
     type Style = SliderStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let params = ctx.params::<SliderParams>();
-        let axis = ctx.axis();
-
-        let Some(mut v) = ctx.value_mut() else {
-            return Mapping::report_missing(ui, ctx.id, "slider");
-        };
-        let Value::Float(v) = &mut *v else {
-            return Mapping::report_missing(ui, ctx.id, "float value");
+        let Some(params) = ctx.foo::<SliderParams>() else {
+            return Mapping::report_missing_data(ui, ctx.id, "slider", "params");
         };
 
-        let mut view = too::views::slider(v).axis(axis);
-        if let Ok(params) = params {
-            view = view.class(params.apply_styling())
-        }
+        let Some(mut value) = ctx.value_mut(&params.value) else {
+            return Mapping::report_missing_data(ui, ctx.id, "slider", "value");
+        };
+
+        let Some(value) = value.float_mut() else {
+            return Mapping::report_missing_data(ui, ctx.id, "slider", "float");
+        };
+
+        let axis = params.axis.unwrap_or_default();
+        let view = too::views::slider(value)
+            .axis(axis.into())
+            .class(params.apply_styling());
         ui.show(view);
     }
 }

@@ -1,6 +1,6 @@
 use too::view::Ui;
 
-use crate::{mapping::BindingView, Context, LuaType, Mapping};
+use crate::{mapping::BindingView, Context, Mapping};
 
 make_struct! {
     struct MarginParams is "MarginParams" {
@@ -27,46 +27,38 @@ pub struct Margin;
 impl BindingView for Margin {
     const SPEC: crate::mapping::BindingSpec = binding! {
         /// Margin applies padding to a view
-        "margin" => MarginParams::NAME
+        "margin" => "MarginParams"
     };
     type Params = MarginParams;
     type Style = ();
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(table) = ctx.tree.map[ctx.id].data.as_table() else {
-            return Mapping::report_missing_data(ui, ctx.id, "margin", "margins");
+        let Some(params) = ctx.foo::<MarginParams>() else {
+            return Mapping::report_missing_data(ui, ctx.id, "margin", "params");
         };
 
-        let left = table.get::<i32>("left").ok();
-        let right = table.get::<i32>("right").ok();
-        let top = table.get::<i32>("top").ok();
-        let bottom = table.get::<i32>("bottom").ok();
-
-        let horizontal = table.get::<i32>("horizontal").ok();
-        let vertical = table.get::<i32>("vertical").ok();
-        let all = table.get::<i32>("all").ok();
-
         let mut margin = too::math::Margin::new(
-            left.unwrap_or(0),
-            top.unwrap_or(0),
-            right.unwrap_or(0),
-            bottom.unwrap_or(0),
+            params.left.unwrap_or(0) as i32,
+            params.top.unwrap_or(0) as i32,
+            params.right.unwrap_or(0) as i32,
+            params.bottom.unwrap_or(0) as i32,
         );
 
-        if let Some(horizontal) = horizontal {
-            margin.left = horizontal;
-            margin.right = horizontal;
+        if let Some(horizontal) = params.horizontal {
+            margin.left = horizontal as i32;
+            margin.right = horizontal as i32;
         }
 
-        if let Some(vertical) = vertical {
-            margin.top = vertical;
-            margin.bottom = vertical;
+        if let Some(vertical) = params.vertical {
+            margin.top = vertical as i32;
+            margin.bottom = vertical as i32;
         }
 
-        if let Some(all) = all {
-            margin = too::math::Margin::same(all)
+        if let Some(all) = params.all {
+            margin = too::math::Margin::same(all as i32)
         }
 
+        // BUG margin is still weird
         ui.margin(margin, |ui| ctx.visit_children(mapping, ui));
     }
 }

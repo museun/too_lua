@@ -2,7 +2,7 @@ use too::view::Ui;
 
 use crate::{
     mapping::{BindingSpec, BindingView},
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
 use super::Color;
@@ -20,17 +20,17 @@ pub struct Background;
 impl BindingView for Background {
     const SPEC: BindingSpec = binding! {
         /// Applies a background color to this children
-        "background" => BackgroundParams::NAME
+        "background" => "BackgroundParams"
     };
 
     type Params = BackgroundParams;
     type Style = ();
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(Ok(bg)) = ctx.params_field::<Color>("background") else {
-            return Mapping::report_missing_data(ui, ctx.id, "background", "bg");
+        let Some(params) = ctx.foo::<BackgroundParams>() else {
+            return Mapping::report_missing_data(ui, ctx.id, "background", "params");
         };
 
-        ui.background(bg.0, |ui| ctx.visit_children(mapping, ui));
+        ui.background(params.background, |ui| ctx.visit_children(mapping, ui));
     }
 }

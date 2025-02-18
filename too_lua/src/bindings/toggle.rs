@@ -3,10 +3,8 @@ use too::view::Ui;
 
 use crate::{
     mapping::{BindingSpec, BindingView},
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
-
-use super::Value;
 
 make_struct! {
     struct ToggleParams is "ToggleParams" {
@@ -21,21 +19,25 @@ pub struct Toggle;
 impl BindingView for Toggle {
     const SPEC: BindingSpec = binding! {
         /// Conditionally show or hide a view
-        "toggle" => ToggleParams::NAME
+        "toggle" => "ToggleParams"
     };
 
     type Params = ToggleParams;
     type Style = ();
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(value) = ctx.value() else {
-            return Mapping::report_missing_data(ui, ctx.id, "show", "value");
+        let Some(params) = ctx.foo::<ToggleParams>() else {
+            return Mapping::report_missing_data(ui, ctx.id, "toggle", "params");
         };
 
-        let Value::Bool(value) = *value else {
-            return Mapping::report_missing(ui, ctx.id, "bool value");
+        let Some(value) = ctx.value_ref(&params.value) else {
+            return Mapping::report_missing_data(ui, ctx.id, "toggle", "value");
         };
 
-        ui.toggle(value, |ui| ctx.visit_children(mapping, ui));
+        let Some(value) = value.bool_ref() else {
+            return Mapping::report_missing_data(ui, ctx.id, "toggle", "bool");
+        };
+
+        ui.toggle(*value, |ui| ctx.visit_children(mapping, ui));
     }
 }

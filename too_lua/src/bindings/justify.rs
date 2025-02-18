@@ -16,3 +16,22 @@ make_enum! {
         SpaceEvenly  = "space_evenly"
     }
 }
+
+impl Default for Justify {
+    fn default() -> Self {
+        Self::Start
+    }
+}
+
+impl From<Justify> for too::layout::Justify {
+    fn from(value: Justify) -> Self {
+        match value {
+            Justify::Start => Self::Start,
+            Justify::End => Self::End,
+            Justify::Center => Self::Center,
+            Justify::SpaceBetween => Self::SpaceBetween,
+            Justify::SpaceAround => Self::SpaceAround,
+            Justify::SpaceEvenly => Self::SpaceEvenly,
+        }
+    }
+}

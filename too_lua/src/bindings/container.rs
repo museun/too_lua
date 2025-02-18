@@ -10,7 +10,7 @@ pub struct Container;
 
 impl BindingView for Container {
     const SPEC: BindingSpec = binding! {
-        /// "A container that just groups multiple calls into one parent"
+        /// A container that just groups multiple calls into one parent
         "container" => any
     };
 

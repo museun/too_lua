@@ -4,10 +4,10 @@ use too::view::{Style as _, Ui, ViewExt as _};
 use crate::{
     mapping::{BindingSpec, BindingView},
     proxy::Params,
-    Context, LuaType as _, Mapping,
+    Context, Mapping,
 };
 
-use super::{Color, Value};
+use super::{Axis, Color};
 
 make_class! {
     class ToggleSwitchClass is "Toggle" ; too::views::ToggleStyle {
@@ -55,6 +55,8 @@ make_struct! {
         style = Option<ToggleSwitchStyle> ; "ToggleSwitchStyle?"
         /// The state of the selected value, a boolean
         value = AnyUserData               ; "Value"
+        /// Axis for the toggle switch
+        axis  = Option<Axis>              ; "Axis?"
     }
 }
 
@@ -76,28 +78,29 @@ pub struct ToggleSwitch;
 impl BindingView for ToggleSwitch {
     const SPEC: BindingSpec = binding! {
          /// A switch that is toggled when clicked
-         "toggle_switch" => ToggleSwitchParams::NAME
+         "toggle_switch" => "ToggleSwitchParams"
     };
 
     type Params = ToggleSwitchParams;
     type Style = ToggleSwitchStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let params = ctx.params::<ToggleSwitchParams>();
-        let axis = ctx.axis();
-
-        let Some(mut value) = ctx.value_mut() else {
-            return Mapping::report_missing_data(ui, ctx.id, "toggle", "value");
+        let Some(params) = ctx.foo::<ToggleSwitchParams>() else {
+            return Mapping::report_missing_data(ui, ctx.id, "toggle_switch", "params");
         };
 
-        let Value::Bool(value) = &mut *value else {
-            return Mapping::report_missing(ui, ctx.id, "bool value");
+        let Some(mut value) = ctx.value_mut(&params.value) else {
+            return Mapping::report_missing_data(ui, ctx.id, "toggle_switch", "value");
         };
 
-        let mut view = too::views::toggle_switch(value).axis(axis);
-        if let Ok(params) = params {
-            view = view.class(params.apply_styling())
-        }
+        let Some(value) = value.bool_mut() else {
+            return Mapping::report_missing_data(ui, ctx.id, "toggle_switch", "bool");
+        };
+
+        let axis = params.axis.unwrap_or_default();
+        let view = too::views::toggle_switch(value)
+            .axis(axis.into())
+            .class(params.apply_styling());
 
         ui.show(view);
     }

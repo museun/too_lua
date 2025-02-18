@@ -31,6 +31,7 @@ impl<'a> IntoIterator for &'a Proxies {
 }
 
 impl Proxies {
+    // TODO this being separate is annoying
     const DEFAULT_PROXY_OBJECTS: &[ProxyObject] = &[
         // values
         proxy::<Value>(),
@@ -150,10 +151,10 @@ pub fn generate(proxies: &Proxies, bindings: &Bindings) -> String {
 
     _ = writeln!(
         &mut out,
-        "---@type fun(func: table<fun(): string>) lazily generate a string\n\
+        "---@alias lazy_args {{}}\n\
+        ---@type fun(func: table<fun(): string>): lazy_args lazily generate a string\n\
         ---@diagnostic disable-next-line: lowercase-global\n\
-        lazy = function(func) end\n\
-        ---@alias lazy_args nil"
+        lazy = function(args) return {{}} end"
     );
     _ = writeln!(&mut out);
 
@@ -249,6 +250,8 @@ pub fn generate(proxies: &Proxies, bindings: &Bindings) -> String {
         let BindingArgs::Named(name) = binding.args else {
             continue;
         };
+
+        let (name, _tail) = name.split_once('|').unwrap_or((name, ""));
 
         if !seen_params.insert(name) {
             continue;

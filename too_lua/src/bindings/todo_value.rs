@@ -1,10 +1,9 @@
 use mlua::AnyUserData;
-use too::view::{Style as _, Ui, ViewExt as _};
+use too::view::{Style, Ui, ViewExt as _};
 
 use crate::{
-    bindings::Value,
     mapping::{BindingSpec, BindingView},
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
 use super::Color;
@@ -59,32 +58,28 @@ pub struct TodoValue;
 impl BindingView for TodoValue {
     const SPEC: BindingSpec = binding! {
         /// A selected value
-        "todo_value" => TodoParams::NAME
+        "todo_value" => "TodoParams"
     };
 
     type Params = TodoParams;
     type Style = TodoStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Ok(params) = ctx.params::<TodoParams>() else {
+        let Some(params) = ctx.foo::<TodoParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "todo", "params");
         };
 
-        let Some(Ok(text)) = ctx.params_field::<String>("text") else {
-            return Mapping::report_missing_data(ui, ctx.id, "todo", "text");
-        };
-
-        let Some(mut value) = ctx.value_mut() else {
+        let Some(mut value) = ctx.value_mut(&params.value) else {
             return Mapping::report_missing_data(ui, ctx.id, "todo", "value");
         };
 
-        let Value::Bool(value) = &mut *value else {
-            return Mapping::report_missing(ui, ctx.id, "bool value");
+        let Some(value) = value.bool_mut() else {
+            return Mapping::report_missing_data(ui, ctx.id, "todo", "bool");
         };
 
-        let default = <too::views::TodoStyle as too::view::Style>::default;
+        let default = <too::views::TodoStyle as Style>::default;
 
-        let view = too::views::todo_value(value, text);
+        let view = too::views::todo_value(value, &params.text);
         let class = params
             .class
             .and_then(|class| {

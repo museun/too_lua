@@ -1,9 +1,8 @@
-use mlua::FromLua;
 use too::view::Ui;
 
 use crate::{
     mapping::{BindingSpec, BindingView},
-    Context, LuaType as _, Mapping,
+    Context, Mapping,
 };
 
 crate::make_enum! {
@@ -42,19 +41,20 @@ pub struct Aligned;
 impl BindingView for Aligned {
     const SPEC: BindingSpec = binding! {
         /// Align its children at a specific anchor
-        "aligned" => AlignParams::NAME
+        "aligned" => "AlignParams"
     };
 
     type Params = AlignParams;
     type Style = ();
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Ok(aligned) = AlignParams::from_lua(ctx.current.data.clone(), ctx.lua) else {
-            return Mapping::report_missing(ui, ctx.id, "aligned");
+        use too::layout::Align2;
+
+        let Some(params) = ctx.foo::<AlignParams>() else {
+            return Mapping::report_missing_data(ui, ctx.id, "aligned", "params");
         };
 
-        use too::layout::Align2;
-        let align = match aligned.align {
+        let align = match params.align {
             AlignedKind::LeftTop => Align2::LEFT_TOP,
             AlignedKind::CenterTop => Align2::CENTER_TOP,
             AlignedKind::RightTop => Align2::RIGHT_TOP,

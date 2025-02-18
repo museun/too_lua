@@ -1,9 +1,9 @@
 ---@alias Color string #RGB | #RGBA | #RRGGBB | #RRGGBBAA hex string
 
----@type fun(func: table<fun(): string>) lazily generate a string
+---@alias lazy_args {}
+---@type fun(func: table<fun(): string>): lazy_args lazily generate a string
 ---@diagnostic disable-next-line: lowercase-global
-lazy = function(func) end
----@alias lazy_args nil
+lazy = function(args) return {} end
 
 ---@class rt
 rt = {
@@ -317,11 +317,11 @@ FrameParams = {}
 ---@field scrollable boolean?  Should this be scrollable?
 ListParams = {}
 
----@class LabelParams  Label displays some text
+---@class LabelParams   Label displays some text
 ---@field style LabelStyle?  The style of the label
 ---@field class Label?  The class of the label
 ---@field text string  The text of the label
-LabelParams = {}
+LabelParams  = {}
 
 ---@class LabelStyle
 ---@field foreground Color?  The foreground text color
@@ -417,6 +417,7 @@ ToggleParams = {}
 ---@field class Toggle?  The class of the selected value
 ---@field style ToggleSwitchStyle?  The style of the selected value
 ---@field value Value  The state of the selected value, a boolean
+---@field axis Axis?  Axis for the toggle switch
 ToggleSwitchParams = {}
 
 ---@class ToggleSwitchStyle
@@ -445,13 +446,13 @@ UnconstrainedParams = {}
 ---@field center fun(args: any): nil  Center aligns its children
 ---@field checkbox fun(args: CheckboxParams): nil  A checkbox to toggle a boolean
 ---@field constrained fun(args: ConstrainedParams): nil  Specifically constrain a view
----@field container fun(args: any): nil  "A container that just groups multiple calls into one parent"
+---@field container fun(args: any): nil  A container that just groups multiple calls into one parent
 ---@field expand_axis fun(): nil  A view that expands the remainder of the space on the axis
 ---@field fill fun(args: FillParams): nil  Fill the childrens area, with an optional size constraint
 ---@field flex fun(args: FlexParams): nil  Give a flex constraint to its children
 ---@field frame fun(args: FrameParams): nil  A frame, with a title, to surround its children
 ---@field horizontal fun(args: ListParams): nil  Horizontal layout of children
----@field label fun(args: LabelParams): nil  Label displays some text
+---@field label fun(args: LabelParams | string | lazy_args): nil  Label displays some text
 ---@field margin fun(args: MarginParams): nil  Margin applies padding to a view
 ---@field progress fun(args: ProgressParams): nil  A progress bar
 ---@field selected fun(args: SelectedParams): nil  A selected boolean value

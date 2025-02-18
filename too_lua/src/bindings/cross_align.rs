@@ -14,3 +14,21 @@ make_enum! {
         Fill    = "fill"
     }
 }
+
+impl Default for CrossAlign {
+    fn default() -> Self {
+        Self::Start
+    }
+}
+
+impl From<CrossAlign> for too::layout::CrossAlign {
+    fn from(value: CrossAlign) -> Self {
+        match value {
+            CrossAlign::Start => Self::Start,
+            CrossAlign::End => Self::End,
+            CrossAlign::Center => Self::Center,
+            CrossAlign::Stretch => Self::Stretch,
+            CrossAlign::Fill => Self::Fill,
+        }
+    }
+}

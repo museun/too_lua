@@ -3,7 +3,7 @@ use too::view::{Style as _, Ui, ViewExt as _};
 use crate::{
     mapping::{BindingSpec, BindingView},
     proxy::Params,
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
 use super::Color;
@@ -63,27 +63,19 @@ pub struct Button;
 impl BindingView for Button {
     const SPEC: BindingSpec = binding! {
         /// A button to click
-        "button" => ButtonParams::NAME
+        "button" => "ButtonParams"
     };
 
     type Params = ButtonParams;
     type Style = ButtonStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Ok(params) = ctx.params::<ButtonParams>() else {
+        let Some(params) = ctx.foo::<ButtonParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "button", "params");
         };
 
-        let Some(Ok(text)) = ctx.params_field::<String>("text") else {
-            return Mapping::report_missing_data(ui, ctx.id, "button", "text");
-        };
-
-        let Some(Ok(handler)) = ctx.params_field::<mlua::Function>("handler") else {
-            return Mapping::report_missing_data(ui, ctx.id, "button", "handler");
-        };
-
-        let view = too::views::button(text).class(params.apply_styling());
-
+        let handler = params.handler.clone();
+        let view = too::views::button(&params.text).class(params.apply_styling());
         if ui.show(view).clicked() {
             let _ = handler.call::<()>(());
         }

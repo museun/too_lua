@@ -2,7 +2,7 @@ use too::view::Ui;
 
 use crate::{
     mapping::{BindingSpec, BindingView},
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
 make_struct! {
@@ -22,20 +22,20 @@ pub struct Unconstrained;
 impl BindingView for Unconstrained {
     const SPEC: BindingSpec = binding! {
         /// Specifically unconstrained a view
-        "unconstrained" => UnconstrainedParams::NAME
+        "unconstrained" => "UnconstrainedParams"
     };
 
     type Params = UnconstrainedParams;
     type Style = ();
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(Ok(table)) = ctx.params_field::<mlua::Table>("constraint") else {
-            return Mapping::report_missing_data(ui, ctx.id, "unconstrained", "constraint");
+        let Some(params) = ctx.foo::<UnconstrainedParams>() else {
+            return Mapping::report_missing_data(ui, ctx.id, "unconstrained", "params");
         };
 
-        let horizontal = table.get::<bool>("horizontal").unwrap_or_default();
-        let vertical = table.get::<bool>("vertical").unwrap_or_default();
-        let both = table.get::<bool>("both").unwrap_or_default();
+        let both = params.both.unwrap_or_default();
+        let horizontal = params.horizontal.unwrap_or_default();
+        let vertical = params.vertical.unwrap_or_default();
 
         let view = if both {
             too::views::Unconstrained::both()

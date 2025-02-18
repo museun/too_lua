@@ -4,10 +4,10 @@ use too::view::{Style as _, Ui, ViewExt as _};
 use crate::{
     mapping::{BindingSpec, BindingView},
     proxy::Params,
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
-use super::{Axis, Color, Value};
+use super::{Axis, Color};
 
 make_class! {
     class ProgressClass is "Progress" ; too::views::ProgressStyle {
@@ -76,40 +76,30 @@ pub struct Progress;
 impl BindingView for Progress {
     const SPEC: BindingSpec = binding! {
         /// A progress bar
-        "progress" => ProgressParams::NAME
+        "progress" => "ProgressParams"
     };
 
     type Params = ProgressParams;
     type Style = ProgressStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let params = ctx.params::<ProgressParams>();
-        let axis = ctx.axis();
-
-        let value = match ctx.value().and_then(|value| {
-            let Value::Float(value) = *value else {
-                return None;
-            };
-            Some(value)
-        }) {
-            Some(value) => value,
-            None => {
-                let Some(value) = ctx.param_value::<mlua::Number>() else {
-                    return Mapping::report_missing_data(
-                        ui,
-                        ctx.id,
-                        "progress",
-                        &format!("float value: {:?}", ctx.current.data,),
-                    );
-                };
-                value as f32
-            }
+        let Some(params) = ctx.foo::<ProgressParams>() else {
+            return Mapping::report_missing_data(ui, ctx.id, "progress", "params");
         };
 
-        let mut view = too::views::progress(value).axis(axis);
-        if let Ok(params) = params {
-            view = view.class(params.apply_styling())
-        }
+        let Some(value) = ctx.value_ref(&params.value) else {
+            return Mapping::report_missing_data(ui, ctx.id, "progress", "value");
+        };
+
+        let Some(value) = value.float_ref() else {
+            return Mapping::report_missing_data(ui, ctx.id, "progress", "float");
+        };
+
+        let axis = params.axis.unwrap_or_default();
+        let view = too::views::progress(*value)
+            .axis(axis.into())
+            .class(params.apply_styling());
+
         ui.show(view);
     }
 }

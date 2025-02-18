@@ -4,10 +4,10 @@ use too::view::{Style as _, Ui, ViewExt as _};
 use crate::{
     mapping::{BindingSpec, BindingView},
     proxy::Params,
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
-use super::{Color, Value};
+use super::Color;
 
 make_class! {
     class CheckboxClass is "Checkbox" ; too::views::CheckboxStyle {
@@ -64,29 +64,31 @@ pub struct Checkbox;
 impl BindingView for Checkbox {
     const SPEC: BindingSpec = binding! {
         /// A checkbox to toggle a boolean
-        "checkbox" => CheckboxParams::NAME
+        "checkbox" => "CheckboxParams"
     };
 
     type Params = CheckboxParams;
     type Style = CheckboxStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Ok(params) = ctx.params::<CheckboxParams>() else {
+        let Some(params) = ctx.foo::<CheckboxParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "checkbox", "params");
         };
 
-        let Some(Ok(text)) = ctx.params_field::<String>("text") else {
-            return Mapping::report_missing_data(ui, ctx.id, "checkbox", "text");
-        };
-
-        let Some(mut value) = ctx.value_mut() else {
+        let Some(mut value) = ctx.value_mut(&params.value) else {
             return Mapping::report_missing_data(ui, ctx.id, "checkbox", "value");
         };
 
-        let Value::Bool(value) = &mut *value else {
-            return Mapping::report_missing(ui, ctx.id, "bool value");
+        let Some(value) = value.bool_mut() else {
+            return Mapping::report_missing_data(ui, ctx.id, "checkbox", "bool");
         };
 
-        ui.show(too::views::checkbox(value, text).class(params.apply_styling()));
+        ui.show(
+            too::views::checkbox(
+                value, //
+                &params.text,
+            )
+            .class(params.apply_styling()),
+        );
     }
 }

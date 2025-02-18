@@ -97,12 +97,14 @@ macro_rules! binding {
 
     (
         #[doc = $doc:expr]
-        $name:expr => $params:expr
+        $name:expr => $($params:tt $(| $tail:tt)*)?
     ) => {
         $crate::mapping::BindingSpec {
             name: $name,
             docs: $doc,
-            params: $crate::mapping::BindingArgs::Named($params),
+            params: $crate::mapping::BindingArgs::Named(
+                concat!($($params, $("|", $tail,)*)?)
+            ),
         }
     };
 

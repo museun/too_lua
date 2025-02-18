@@ -8,9 +8,9 @@ use crate::{
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ConstraintKind {
-    ExactSize { w: u16, h: u16 },
-    MaxSize { w: u16, h: u16 },
-    MinSize { w: u16, h: u16 },
+    ExactSize(u16, u16),
+    MaxSize(u16, u16),
+    MinSize(u16, u16),
     ExactHeight(u16),
     ExactWidth(u16),
     MaxHeight(u16),
@@ -43,36 +43,30 @@ impl mlua::UserData for ConstraintKind {
     }
 }
 
-// why is there a third one?
 pub struct Constraint;
-
-impl Constraint {
-    const TUPLE_CONSTRUCTORS: &[(&str, fn(u16, u16) -> ConstraintKind)] = &[
-        ("exact_size", |w, h| ConstraintKind::ExactSize { w, h }),
-        ("max_size", |w, h| ConstraintKind::MaxSize { w, h }),
-        ("min_size", |w, h| ConstraintKind::MinSize { w, h }),
-    ];
-
-    const SINGLE_CONSTRUCTORS: &[(&str, fn(u16) -> ConstraintKind)] = &[
-        ("exact_height", |h| ConstraintKind::ExactHeight(h)),
-        ("exact_width", |w| ConstraintKind::ExactWidth(w)),
-        ("max_height", |h| ConstraintKind::MaxHeight(h)),
-        ("max_width", |w| ConstraintKind::MaxWidth(w)),
-        ("min_width", |w| ConstraintKind::MinWidth(w)),
-        ("min_height", |h| ConstraintKind::MinHeight(h)),
-    ];
-}
 
 impl mlua::UserData for Constraint {
     fn add_methods<M>(methods: &mut M)
     where
         M: mlua::UserDataMethods<Self>,
     {
-        for (name, ctor) in Self::TUPLE_CONSTRUCTORS {
+        use ConstraintKind::*;
+        for (name, ctor) in &[
+            ("exact_size", ExactSize as fn(u16, u16) -> _),
+            ("max_size", MaxSize),
+            ("min_size", MinSize),
+        ] {
             methods.add_function(name, move |_lua, (w, h)| Ok(ctor(w, h)));
         }
 
-        for (name, ctor) in Self::SINGLE_CONSTRUCTORS {
+        for (name, ctor) in &[
+            ("exact_height", ExactHeight as fn(u16) -> _),
+            ("exact_width", ExactWidth),
+            ("max_height", MaxHeight),
+            ("max_width", MaxWidth),
+            ("min_width", MinWidth),
+            ("min_height", MinHeight),
+        ] {
             methods.add_function(name, move |_lua, e| Ok(ctor(e)));
         }
     }
@@ -127,7 +121,7 @@ impl LuaType for Constraint {
 impl Proxy for Constraint {}
 
 crate::make_struct! {
-    struct ConstrainedParams is  "ConstrainedParams" {
+    struct ConstrainedParams is "ConstrainedParams" {
         /// The constraint to use
         constraint = ConstraintKind ; "Constraint"
     }
@@ -139,7 +133,7 @@ pub struct Constrained;
 impl BindingView for Constrained {
     const SPEC: BindingSpec = binding! {
         /// Specifically constrain a view
-        "constrained" => ConstrainedParams::NAME
+        "constrained" => "ConstrainedParams"
     };
 
     type Params = ConstrainedParams;
@@ -149,14 +143,14 @@ impl BindingView for Constrained {
         use too::views::Constrain;
         use ConstraintKind::*;
 
-        let Some(Ok(constraint)) = ctx.params_field::<ConstraintKind>("constraint") else {
-            return Mapping::report_missing_data(ui, ctx.id, "constrained", "constraint");
+        let Some(params) = ctx.foo::<ConstrainedParams>() else {
+            return Mapping::report_missing_data(ui, ctx.id, "constrained", "params");
         };
 
-        let view = match constraint {
-            ExactSize { w, h } => Constrain::exact_size((w as i32, h as i32)),
-            MaxSize { w, h } => Constrain::max_size((w as i32, h as i32)),
-            MinSize { w, h } => Constrain::min_size((w as i32, h as i32)),
+        let view = match params.constraint {
+            ExactSize(w, h) => Constrain::exact_size((w as i32, h as i32)),
+            MaxSize(w, h) => Constrain::max_size((w as i32, h as i32)),
+            MinSize(w, h) => Constrain::min_size((w as i32, h as i32)),
             ExactHeight(v) => Constrain::exact_height(v as i32),
             ExactWidth(v) => Constrain::exact_width(v as i32),
             MaxHeight(v) => Constrain::max_height(v as i32),

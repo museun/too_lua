@@ -1,10 +1,10 @@
 use too::view::{Ui, ViewExt as _};
 
 use crate::{
-    bindings::{Align, BorderKind, BorderParams},
+    bindings::{Align, BorderKind},
     mapping::{BindingSpec, BindingView},
     proxy::Params,
-    Context, LuaType as _, Mapping,
+    Context, Mapping,
 };
 
 use super::{BorderClass, BorderStyle};
@@ -18,7 +18,7 @@ make_struct! {
         /// The border to use
         border = BorderKind          ; "BorderKind"
         /// Alignment for the title
-        align  = Align               ; "Align?"
+        align  = Option<Align>       ; "Align?"
         /// A string to place in the title
         title  = String              ; "string"
     }
@@ -42,32 +42,26 @@ pub struct Frame;
 impl BindingView for Frame {
     const SPEC: BindingSpec = binding! {
         /// A frame, with a title, to surround its children
-        "frame" => FrameParams::NAME
+        "frame" => "FrameParams"
     };
 
     type Params = FrameParams;
     type Style = BorderStyle;
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Ok(params) = ctx.params::<BorderParams>() else {
+        use too::renderer::Border;
+
+        let Some(params) = ctx.foo::<FrameParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "frame", "params");
         };
-        let Some(Ok(border)) = ctx.params_field::<BorderKind>("border") else {
-            return Mapping::report_missing_data(ui, ctx.id, "frame", "border");
-        };
-        let Some(Ok(title)) = ctx.params_field::<String>("title") else {
-            return Mapping::report_missing_data(ui, ctx.id, "frame", "title");
+
+        let align = match params.align.unwrap_or(Align::Middle) {
+            Align::Min => too::layout::Align::Min,
+            Align::Middle => too::layout::Align::Center,
+            Align::Max => too::layout::Align::Max,
         };
 
-        let align = ctx
-            .params_field::<Align>("align")
-            .transpose()
-            .ok()
-            .flatten()
-            .unwrap_or(Align::Middle);
-
-        use too::renderer::Border;
-        let border = match border {
+        let border = match params.border {
             BorderKind::Empty => Border::EMPTY,
             BorderKind::Thin => Border::THIN,
             BorderKind::ThinWide => Border::THIN_WIDE,
@@ -78,11 +72,7 @@ impl BindingView for Frame {
             BorderKind::ThickWide => Border::THICK_WIDE,
         };
 
-        let view = too::views::frame(border, title).title_align(match align {
-            Align::Min => too::layout::Align::Min,
-            Align::Middle => too::layout::Align::Center,
-            Align::Max => too::layout::Align::Max,
-        });
+        let view = too::views::frame(border, &params.title).title_align(align);
 
         ui.show_children(view.class(params.apply_styling()), |ui| {
             ctx.visit_children(mapping, ui)

@@ -1,9 +1,10 @@
+use mlua::Either;
 use too::view::{Style, Ui, ViewExt as _};
 
 use crate::{
     bindings::Color,
     mapping::{BindingSpec, BindingView},
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
 make_class! {
@@ -57,32 +58,34 @@ pub struct Label;
 impl BindingView for Label {
     const SPEC: BindingSpec = binding! {
         /// Label displays some text
-        "label" => LabelParams::NAME
+        "label" => "LabelParams | string | lazy_args"
     };
 
     type Params = LabelParams;
     type Style = LabelStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        use too::views::{label, Label};
-
-        type Apply = fn(Label) -> Label;
-        type Class = fn(&too::view::Palette, too::view::StyleOptions) -> too::views::LabelStyle;
-
-        if let Some(text) = ctx.text_ref() {
-            ui.show(label(text));
-            return;
-        }
-
-        let Some(Ok(text)) = ctx.params_field::<Box<str>>("text") else {
-            return Mapping::report_missing_data(ui, ctx.id, "label", "text");
+        use too::{
+            view::{Palette, StyleOptions},
+            views::{label, Label, LabelStyle},
         };
 
-        let Ok(params) = ctx.params::<LabelParams>() else {
+        type Apply = fn(Label) -> Label;
+        type Class = fn(&Palette, StyleOptions) -> LabelStyle;
+
+        let Some(params) = ctx.foo::<Either<String, LabelParams>>() else {
             return Mapping::report_missing_data(ui, ctx.id, "label", "params");
         };
 
-        let mut label = label(text);
+        let params = match params {
+            Either::Left(left) => {
+                ui.show(label(left));
+                return;
+            }
+            Either::Right(params) => params,
+        };
+
+        let mut label = label(params.text);
 
         let mut fg = None;
         if let Some(style) = params.style {
@@ -112,14 +115,13 @@ impl BindingView for Label {
             .fold(label, |l, a| a(l))
         }
 
-        let mut class: Class = <too::views::LabelStyle as too::view::Style>::default;
-
+        let mut class: Class = <LabelStyle as Style>::default;
         if let Some(params) = params.class {
             match params {
-                LabelClass::Info => class = too::views::LabelStyle::info,
-                LabelClass::Warning => class = too::views::LabelStyle::warning,
-                LabelClass::Success => class = too::views::LabelStyle::success,
-                LabelClass::Danger => class = too::views::LabelStyle::danger,
+                LabelClass::Info => class = LabelStyle::info,
+                LabelClass::Warning => class = LabelStyle::warning,
+                LabelClass::Success => class = LabelStyle::success,
+                LabelClass::Danger => class = LabelStyle::danger,
                 _ => {}
             };
         }

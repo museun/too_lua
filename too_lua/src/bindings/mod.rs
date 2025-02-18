@@ -117,14 +117,14 @@ pub use selected::{Selected, SelectedClass, SelectedParams, SelectedStyle};
 mod separator;
 pub use separator::Separator;
 
-mod toggle;
-pub use toggle::{Toggle, ToggleParams};
-
 mod slider;
 pub use slider::{Slider, SliderClass, SliderParams, SliderStyle};
 
 mod todo_value;
 pub use todo_value::{TodoClass, TodoParams, TodoStyle, TodoValue};
+
+mod toggle;
+pub use toggle::{Toggle, ToggleParams};
 
 mod toggle_switch;
 pub use toggle_switch::{ToggleSwitch, ToggleSwitchClass, ToggleSwitchParams, ToggleSwitchStyle};

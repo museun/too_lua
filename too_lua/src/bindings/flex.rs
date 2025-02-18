@@ -2,7 +2,7 @@ use too::view::Ui;
 
 use crate::{
     mapping::{BindingSpec, BindingView},
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
 crate::make_struct! {
@@ -20,25 +20,28 @@ pub struct Flex;
 impl BindingView for Flex {
     const SPEC: BindingSpec = binding! {
         /// Give a flex constraint to its children
-        "flex" => FlexParams::NAME
+        "flex" => "FlexParams"
     };
 
     type Params = FlexParams;
     type Style = ();
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        use too::layout::Flex;
-        if let Some(Ok(factor)) = ctx.params_field::<f32>("tight") {
-            ui.show_children(too::views::Flexible::new(Flex::Tight(factor)), |ui| {
-                ctx.visit_children(mapping, ui)
-            });
+        use too::{layout::Flex, views::Flexible};
 
+        let Some(params) = ctx.foo::<FlexParams>() else {
+            return Mapping::report_missing_data(ui, ctx.id, "flex", "params");
+        };
+
+        if let Some(flex) = params
+            .tight
+            .map(Flex::Tight)
+            .or_else(|| params.loose.map(Flex::Loose))
+        {
+            ui.show_children(Flexible::new(flex), |ui| ctx.visit_children(mapping, ui));
             return;
         };
 
-        let factor = ctx.params_field_opt("loose").unwrap_or(1.0);
-        ui.show_children(too::views::Flexible::new(Flex::Loose(factor)), |ui| {
-            ctx.visit_children(mapping, ui)
-        });
+        Mapping::report_missing_data(ui, ctx.id, "flex", "params")
     }
 }

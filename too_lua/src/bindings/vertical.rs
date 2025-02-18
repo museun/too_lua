@@ -2,7 +2,7 @@ use too::view::Ui;
 
 use crate::{
     mapping::{BindingSpec, BindingView},
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
 use super::ListParams;
@@ -13,7 +13,7 @@ pub struct Vertical;
 impl BindingView for Vertical {
     const SPEC: BindingSpec = binding! {
         /// Vertical layout of children
-        "vertical" => ListParams::NAME
+        "vertical" => "ListParams"
     };
 
     type Params = ListParams;

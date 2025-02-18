@@ -4,7 +4,7 @@ use crate::{
     bindings::Color,
     mapping::{BindingSpec, BindingView},
     proxy::Params,
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
 make_enum! {
@@ -79,23 +79,19 @@ pub struct Border;
 impl BindingView for Border {
     const SPEC: BindingSpec = binding! {
         /// Border to surround its children
-        "border" => BorderParams::NAME
+        "border" => "BorderParams"
     };
 
     type Params = BorderParams;
     type Style = BorderStyle;
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Ok(params) = ctx.params::<BorderParams>() else {
+        use too::renderer::Border;
+        let Some(params) = ctx.foo::<BorderParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "border", "params");
         };
 
-        let Some(Ok(border)) = ctx.params_field::<BorderKind>("border") else {
-            return Mapping::report_missing_data(ui, ctx.id, "border", "border");
-        };
-
-        use too::renderer::Border;
-        let border = match border {
+        let border = match params.border {
             BorderKind::Empty => Border::EMPTY,
             BorderKind::Thin => Border::THIN,
             BorderKind::ThinWide => Border::THIN_WIDE,
@@ -107,7 +103,6 @@ impl BindingView for Border {
         };
 
         let view = too::views::border(border).class(params.apply_styling());
-
         ui.show_children(view, |ui| ctx.visit_children(mapping, ui));
     }
 }

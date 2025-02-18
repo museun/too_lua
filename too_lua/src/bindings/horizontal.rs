@@ -2,7 +2,7 @@ use too::view::Ui;
 
 use crate::{
     mapping::{BindingSpec, BindingView},
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
 use super::ListParams;
@@ -13,7 +13,7 @@ pub struct Horizontal;
 impl BindingView for Horizontal {
     const SPEC: BindingSpec = binding! {
         /// Horizontal layout of children
-        "horizontal" => ListParams::NAME
+        "horizontal" => "ListParams"
     };
 
     type Params = ListParams;

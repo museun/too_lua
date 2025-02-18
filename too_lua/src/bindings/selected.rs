@@ -4,10 +4,10 @@ use too::view::{Style as _, Ui, ViewExt as _};
 use crate::{
     mapping::{BindingSpec, BindingView},
     proxy::Params,
-    Context, LuaType, Mapping,
+    Context, Mapping,
 };
 
-use super::{Color, Value};
+use super::Color;
 
 make_class! {
     class SelectedClass is "Selected" ; too::views::SelectedStyle {
@@ -64,28 +64,24 @@ pub struct Selected;
 impl BindingView for Selected {
     const SPEC: BindingSpec = binding! {
         /// A selected boolean value
-        "selected" => SelectedParams::NAME
+        "selected" => "SelectedParams"
     };
     type Params = SelectedParams;
     type Style = SelectedStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Ok(params) = ctx.params::<SelectedParams>() else {
+        let Some(params) = ctx.foo::<SelectedParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "selected", "params");
         };
 
-        let Some(Ok(text)) = ctx.params_field::<String>("text") else {
-            return Mapping::report_missing_data(ui, ctx.id, "selected", "text");
-        };
-
-        let Some(mut value) = ctx.value_mut() else {
+        let Some(mut value) = ctx.value_mut(&params.value) else {
             return Mapping::report_missing_data(ui, ctx.id, "selected", "value");
         };
 
-        let Value::Bool(value) = &mut *value else {
-            return Mapping::report_missing(ui, ctx.id, "bool value");
+        let Some(value) = value.bool_mut() else {
+            return Mapping::report_missing_data(ui, ctx.id, "selected", "bool");
         };
 
-        ui.show(too::views::selected(value, text).class(params.apply_styling()));
+        ui.show(too::views::selected(value, &params.text).class(params.apply_styling()));
     }
 }
