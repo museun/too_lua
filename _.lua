@@ -372,7 +372,7 @@ Toggle = {
 ---@field style ProgressStyle?  The style of the progress bar
 ---@field class Progress?  The class of the progress bar
 ---@field axis Axis?  Axis to use for layout
----@field value Value  The value to use (an f32 in the range of 0.0 ..= 1.0)
+---@field value Value | number  The value to use (an f32 in the range of 0.0 ..= 1.0)
 
 ---@class selected  A selected boolean value
 ---@field style SelectedStyle?  The style of the selected value
@@ -427,7 +427,7 @@ Toggle = {
 ---@field horizontal fun(args: horizontal): nil  Horizontal layout of children
 ---@field label fun(args: string | lazy_args | label): nil  Label displays some text
 ---@field margin fun(args: margin): nil  Margin applies padding to a view
----@field progress fun(args: Value | progress): nil  A progress bar
+---@field progress fun(args: Value | number | progress): nil  A progress bar
 ---@field selected fun(args: selected): nil  A selected boolean value
 ---@field separator fun(): nil  Separator to divide some area
 ---@field slider fun(args: Value | slider): nil  A slider to adjust a value

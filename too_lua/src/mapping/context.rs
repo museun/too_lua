@@ -104,11 +104,24 @@ impl<'a> Context<'a> {
         Self::find(&self.current.data).and_then(|c| c.borrow_mut().ok())
     }
 
+    pub fn param_value<T: FromLua>(&self) -> Option<T> {
+        Self::find_kind(&self.current.data, self.lua)
+    }
+
     fn find(value: &mlua::Value) -> Option<AnyUserData> {
         match value {
             mlua::Value::Table(table) => table.get("value").or_else(|_| table.get(1)).ok(),
             mlua::Value::UserData(ud) => Some(ud.clone()),
             _ => None,
+        }
+    }
+
+    fn find_kind<T: FromLua>(value: &mlua::Value, lua: &mlua::Lua) -> Option<T> {
+        match value {
+            mlua::Value::Table(table) => {
+                table.get::<T>("value").or_else(|_| table.get::<T>(1)).ok()
+            }
+            _ => T::from_lua(value.clone(), lua).ok(),
         }
     }
 }

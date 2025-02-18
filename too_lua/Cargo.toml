@@ -7,5 +7,7 @@ edition = "2021"
 too = { git = "https://github.com/museun/too", branch = "too_lua" }
 
 # NOTE the minimum supported lua is 5.3 (for integers)
-mlua = { version = "0.10.3", features = [ "lua54", "error-send" ] }
+mlua = { version = "0.10.3", features = [ "lua54", "error-send", "send", "async" ] }
 slotmap = "1.0.7"
+tokio = { version = "1.43.0", features = [ "macros", "rt-multi-thread", "sync", "time" ] }
+tokio-stream = "0.1.17"

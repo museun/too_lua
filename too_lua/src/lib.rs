@@ -4,6 +4,8 @@ pub use application::Application;
 mod script;
 pub use script::Script;
 
+mod runtime;
+
 #[macro_use]
 mod mapping;
 pub use mapping::{Binding, Context, Field, Indirect, Mapping};

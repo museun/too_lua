@@ -51,7 +51,7 @@ pub struct Progress;
 impl Progress {
     binding! {
         /// A progress bar
-        "progress" => "Value | progress" {
+        "progress" => "Value | number | progress" {
             /// The style of the progress bar
             style "ProgressStyle?"
             /// The class of the progress bar
@@ -59,7 +59,7 @@ impl Progress {
             /// Axis to use for layout
             axis "Axis?"
             /// The value to use (an f32 in the range of 0.0 ..= 1.0)
-            value "Value"
+            value "Value | number"
         }
     }
 
@@ -67,11 +67,24 @@ impl Progress {
         let params = ctx.params::<ProgressParams>();
         let axis = ctx.axis();
 
-        let Some(value) = ctx.value() else {
-            return Mapping::report_missing(ui, ctx.id, "progress");
-        };
-        let Value::Float(value) = *value else {
-            return Mapping::report_missing(ui, ctx.id, "float value");
+        let value = match ctx.value().and_then(|value| {
+            let Value::Float(value) = *value else {
+                return None;
+            };
+            Some(value)
+        }) {
+            Some(value) => value,
+            None => {
+                let Some(value) = ctx.param_value::<mlua::Number>() else {
+                    return Mapping::report_missing_data(
+                        ui,
+                        ctx.id,
+                        "progress",
+                        &format!("float value: {:?}", ctx.current.data,),
+                    );
+                };
+                value as f32
+            }
         };
 
         let mut view = too::views::progress(value).axis(axis);

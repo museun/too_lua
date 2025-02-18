@@ -83,10 +83,19 @@ impl Tree {
                         }
                     }
                     _ => {
-                        let Ok(data) = v.call::<mlua::String>(()) else {
+                        let Ok(data) = v.call::<mlua::Value>(()) else {
                             continue;
                         };
-                        let _ = table.set("text", data);
+
+                        let key = match data {
+                            mlua::Value::Boolean(_)
+                            | mlua::Value::Integer(_)
+                            | mlua::Value::Number(_) => "value",
+                            mlua::Value::String(_) => "text",
+                            _ => continue,
+                        };
+
+                        let _ = table.set(key, data);
                         seen = true
                     }
                 },
@@ -107,6 +116,39 @@ impl Tree {
                         continue;
                     }
                     self.map[k].data = mlua::Value::String(data);
+                    seen = true;
+                }
+
+                mlua::Value::Boolean(bool) => {
+                    let Ok(data) = v.call::<bool>(()) else {
+                        continue;
+                    };
+                    if *bool == data {
+                        continue;
+                    }
+                    self.map[k].data = mlua::Value::Boolean(data);
+                    seen = true;
+                }
+
+                mlua::Value::Integer(integer) => {
+                    let Ok(data) = v.call::<mlua::Integer>(()) else {
+                        continue;
+                    };
+                    if *integer == data {
+                        continue;
+                    }
+                    self.map[k].data = mlua::Value::Integer(data);
+                    seen = true;
+                }
+
+                mlua::Value::Number(float) => {
+                    let Ok(data) = v.call::<mlua::Number>(()) else {
+                        continue;
+                    };
+                    if *float == data {
+                        continue;
+                    }
+                    self.map[k].data = mlua::Value::Number(data);
                     seen = true;
                 }
 

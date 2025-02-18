@@ -5,7 +5,7 @@ use std::{
 
 use mlua::AnyUserData;
 
-use crate::{Tree, UiBuilder};
+use crate::{runtime::RunningTasks, Tree, UiBuilder};
 
 pub struct Script {
     path: PathBuf,
@@ -50,6 +50,7 @@ impl Script {
 
     pub fn reload_source(&mut self, source: &str, lua: &mlua::Lua) -> mlua::Result<()> {
         Self::reset_loaded(lua);
+        lua.app_data_mut::<RunningTasks>().unwrap().stop_all();
         self.update = lua.load(source).eval()?;
         Ok(())
     }
