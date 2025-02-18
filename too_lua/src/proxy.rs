@@ -131,31 +131,32 @@ pub fn generate(proxies: &Proxies, bindings: &Bindings) -> String {
     );
     _ = writeln!(&mut out);
 
-    // _ = writeln!(&mut out, "---@class rt");
-    // _ = writeln!(&mut out, "rt = {{ }}");
-    // for &crate::runtime::Method {
-    //     kind,
-    //     name,
-    //     args,
-    //     params,
-    //     returns,
-    //     doc,
-    // } in Runtime::lua_bindings()
-    // {
-    //     _ = writeln!(&mut out, "--- {doc}");
-    //     if let crate::runtime::Kind::Async = kind {
-    //         _ = writeln!(&mut out, "---@async");
-    //     }
-    //     _ = writeln!(&mut out, "---@params {args}");
-    //     _ = writeln!(
-    //         &mut out,
-    //         "---@return {}",
-    //         if returns == "" { "nil" } else { returns }
-    //     );
-    //     _ = writeln!(&mut out, "function ui.{name}({params}) end");
-    // }
+    _ = writeln!(&mut out, "---@class rt");
+    _ = writeln!(&mut out, "rt = {{");
+    for &crate::runtime::Method {
+        kind,
+        name,
+        args,
+        params,
+        returns,
+        doc,
+    } in crate::runtime::Runtime::lua_bindings()
+    {
+        _ = writeln!(&mut out, "    --- {doc}");
+        if let crate::runtime::Kind::Async = kind {
+            _ = writeln!(&mut out, "    ---@async");
+        }
+        _ = writeln!(&mut out, "    ---@params {args}");
+        _ = writeln!(
+            &mut out,
+            "    ---@return {}",
+            if returns == "" { "nil" } else { returns }
+        );
+        _ = writeln!(&mut out, "    {name} = function({params}) end,");
+    }
+    _ = writeln!(&mut out, "}}");
 
-    // _ = writeln!(&mut out);
+    _ = writeln!(&mut out);
 
     for object in proxies {
         match object.kind {

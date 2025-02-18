@@ -5,6 +5,23 @@
 lazy = function(func) end
 ---@alias lazy_args nil
 
+---@class rt
+rt = {
+    --- sleep for `millis`
+    ---@async
+    ---@params millis: integer
+    ---@return nil
+    sleep_ms = function(millis) end,
+    --- spawns an async tasks, returning its id
+    ---@params task: fun():nil | thread
+    ---@return integer
+    spawn = function(task) end,
+    --- attempts to stop a running task
+    ---@params id: integer?
+    ---@return boolean
+    stop = function(id) end,
+}
+
 ---@class (exact) Constraint
 ---@field exact_size fun(w: integer, h: integer): Constraint The view has an exact size
 ---@field exact_height fun(h: integer): Constraint The view has an exact height
