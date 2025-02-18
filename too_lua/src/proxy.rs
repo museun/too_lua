@@ -150,7 +150,7 @@ pub fn generate(proxies: &Proxies, bindings: &Bindings) -> String {
         _ = writeln!(
             &mut out,
             "    ---@return {}",
-            if returns == "" { "nil" } else { returns }
+            if returns.is_empty() { "nil" } else { returns }
         );
         _ = writeln!(&mut out, "    {name} = function({params}) end,");
     }
