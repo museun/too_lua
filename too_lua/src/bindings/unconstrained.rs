@@ -1,23 +1,34 @@
 use too::view::Ui;
 
 use crate::{
-    mapping::{Binding, Field},
-    Context, Mapping,
+    mapping::{BindingSpec, BindingView},
+    Context, LuaType, Mapping,
 };
+
+make_struct! {
+    struct UnconstrainedParams is "UnconstrainedParams" {
+        /// Unconstrain the horizontal axis
+        horizontal = Option<bool> ; "boolean?"
+        /// Unconstrain the vertical axis
+        vertical = Option<bool> ; "boolean?"
+        /// Unconstrain both axis
+        both = Option<bool> ; "boolean?"
+    }
+}
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Unconstrained;
 
-impl Unconstrained {
-    binding! {
+impl BindingView for Unconstrained {
+    const SPEC: BindingSpec = binding! {
         /// Specifically unconstrained a view
-        "unconstrained" => "unconstrained" {
-            /// Which axis to remove the constraints for
-            constraint "{horizontal: boolean?, vertical: boolean?, both: boolean?}"
-        }
-    }
+        "unconstrained" => UnconstrainedParams::NAME
+    };
 
-    pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+    type Params = UnconstrainedParams;
+    type Style = ();
+
+    fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         let Some(Ok(table)) = ctx.params_field::<mlua::Table>("constraint") else {
             return Mapping::report_missing_data(ui, ctx.id, "unconstrained", "constraint");
         };

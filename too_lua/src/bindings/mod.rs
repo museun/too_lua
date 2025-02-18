@@ -1,4 +1,4 @@
-use crate::{Binding, Indirect};
+use crate::{mapping::BindingView as _, Binding, Indirect};
 
 #[doc(hidden)]
 #[derive(Default)]
@@ -15,35 +15,40 @@ impl<'a> IntoIterator for &'a Bindings {
 }
 
 impl Bindings {
-    const DEFAULT_TOO_BINDINGS: &[(Binding, Indirect)] = &[
-        (Aligned::binding(), Aligned::view),
-        (Background::binding(), Background::view),
-        (Border::binding(), Border::view),
-        (Button::binding(), Button::view),
-        (Center::binding(), Center::view),
-        (Checkbox::binding(), Checkbox::view),
-        (Constrained::binding(), Constrained::view),
-        (Container::binding(), Container::view),
-        (ExpandAxis::binding(), ExpandAxis::view),
-        (Fill::binding(), Fill::view),
-        (Flex::binding(), Flex::view),
-        (Frame::binding(), Frame::view),
-        (Horizontal::binding(), Horizontal::view),
-        (Label::binding(), Label::view),
-        (Margin::binding(), Margin::view),
-        (Progress::binding(), Progress::view),
-        (Selected::binding(), Selected::view),
-        (Separator::binding(), Separator::view),
-        (Slider::binding(), Slider::view),
-        (TodoValue::binding(), TodoValue::view),
-        (Toggle::binding(), Toggle::view),
-        (ToggleSwitch::binding(), ToggleSwitch::view),
-        (Unconstrained::binding(), Unconstrained::view),
-        (Vertical::binding(), Vertical::view),
+    const DEFAULT_TOO_BINDINGS: &[(fn() -> Binding, Indirect)] = &[
+        (Aligned::binding, Aligned::view),
+        (Background::binding, Background::view),
+        (Border::binding, Border::view),
+        (Button::binding, Button::view),
+        (Center::binding, Center::view),
+        (Checkbox::binding, Checkbox::view),
+        (Constrained::binding, Constrained::view),
+        (Container::binding, Container::view),
+        (ExpandAxis::binding, ExpandAxis::view),
+        (Fill::binding, Fill::view),
+        (Flex::binding, Flex::view),
+        (Frame::binding, Frame::view),
+        (Horizontal::binding, Horizontal::view),
+        (Label::binding, Label::view),
+        (Margin::binding, Margin::view),
+        (Progress::binding, Progress::view),
+        (Selected::binding, Selected::view),
+        (Separator::binding, Separator::view),
+        (Slider::binding, Slider::view),
+        (TodoValue::binding, TodoValue::view),
+        (Toggle::binding, Toggle::view),
+        (ToggleSwitch::binding, ToggleSwitch::view),
+        (Unconstrained::binding, Unconstrained::view),
+        (Vertical::binding, Vertical::view),
     ];
 
     pub fn default_bindings() -> Self {
-        Self::default().with_many(Self::DEFAULT_TOO_BINDINGS.iter().copied())
+        Self::default().with_many(
+            Self::DEFAULT_TOO_BINDINGS
+                .iter()
+                .copied()
+                .map(|(binding, view)| (binding(), view)),
+        )
     }
 
     pub fn with_many(self, many: impl IntoIterator<Item = (Binding, Indirect)>) -> Self {
@@ -59,10 +64,10 @@ impl Bindings {
 }
 
 mod aligned;
-pub use aligned::{Aligned, AlignedParams};
+pub use aligned::{AlignParams, Aligned, AlignedKind};
 
 mod background;
-pub use background::Background;
+pub use background::{Background, BackgroundParams};
 
 mod border;
 pub use border::{Border, BorderClass, BorderKind, BorderParams, BorderStyle};
@@ -77,7 +82,7 @@ mod checkbox;
 pub use checkbox::{Checkbox, CheckboxClass, CheckboxParams, CheckboxStyle};
 
 mod constrained;
-pub use constrained::{Constrained, Constraint, ConstraintKind};
+pub use constrained::{Constrained, ConstrainedParams, Constraint, ConstraintKind};
 
 mod container;
 pub use container::Container;
@@ -86,13 +91,13 @@ mod expand_axis;
 pub use expand_axis::ExpandAxis;
 
 mod fill;
-pub use fill::Fill;
+pub use fill::{Fill, FillParams};
 
 mod flex;
-pub use flex::Flex;
+pub use flex::{Flex, FlexParams};
 
 mod frame;
-pub use frame::Frame;
+pub use frame::{Frame, FrameParams};
 
 mod horizontal;
 pub use horizontal::Horizontal;
@@ -101,7 +106,7 @@ mod label;
 pub use label::{Label, LabelClass, LabelParams, LabelStyle};
 
 mod margin;
-pub use margin::Margin;
+pub use margin::{Margin, MarginParams};
 
 mod progress;
 pub use progress::{Progress, ProgressClass, ProgressParams, ProgressStyle};
@@ -113,7 +118,7 @@ mod separator;
 pub use separator::Separator;
 
 mod toggle;
-pub use toggle::Toggle;
+pub use toggle::{Toggle, ToggleParams};
 
 mod slider;
 pub use slider::{Slider, SliderClass, SliderParams, SliderStyle};
@@ -122,15 +127,16 @@ mod todo_value;
 pub use todo_value::{TodoClass, TodoParams, TodoStyle, TodoValue};
 
 mod toggle_switch;
-pub use toggle_switch::{ToggleClass, ToggleParams, ToggleStyle, ToggleSwitch};
+pub use toggle_switch::{ToggleSwitch, ToggleSwitchClass, ToggleSwitchParams, ToggleSwitchStyle};
 
 mod unconstrained;
-pub use unconstrained::Unconstrained;
+pub use unconstrained::{Unconstrained, UnconstrainedParams};
 
 mod vertical;
 pub use vertical::Vertical;
 
 mod list;
+pub use list::ListParams;
 
 mod align;
 pub use align::Align;

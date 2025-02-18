@@ -14,7 +14,7 @@ pub use context::Context;
 
 #[macro_use]
 mod binding;
-pub use binding::{Binding, Field};
+pub use binding::{Binding, BindingArgs, BindingParams, BindingSpec, BindingView};
 
 pub type Indirect = fn(&Mapping, &Ui<'_>, Context<'_>);
 

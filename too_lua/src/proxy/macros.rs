@@ -1,14 +1,17 @@
+use too::view::{Palette, Style, StyleOptions};
+
 #[macro_export]
-macro_rules! make_style {
-    (@no_merge $name:ident => $style:path {
+macro_rules! make_struct {
+    (struct $name:ident is $lua_name:tt {
         $(
-            #[doc = $doc:expr]
-            $ident:ident = $ty:ty
+            #[doc = $field_doc:expr]
+            $ident:ident = $ty:ty ; $lua_ty:expr
         )*
     }) => {
+        #[derive(Debug, Clone)]
         pub struct $name {
             $(
-                #[doc = $doc]
+                #[doc = $field_doc]
                 pub $ident: $ty
             ),*
         }
@@ -16,60 +19,37 @@ macro_rules! make_style {
         impl mlua::FromLua for $name {
             fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
                 let mlua::Value::Table(value) = value else {
-                    return Err(mlua::Error::runtime("expected a table"));
+                    return Err(mlua::Error::runtime(
+                        format!("expected a table, got {}", value.type_name())
+                    ));
                 };
 
                 Ok(Self {
-                    $($ident : value.get(stringify!($ident))?),*
+                    $( $ident: value.get(stringify!($ident))? ),*
                 })
             }
         }
-    };
 
-    ($name:ident => $style:path {
-        $(
-            #[doc = $doc:expr]
-            $ident:ident = $ty:ty
-        )*
-    }) => {
-        make_style! {
-            @no_merge $name => $style {
-                $(
-                    #[doc = $doc]
-                    $ident = $ty
-                )*
-            }
-        }
+        impl $crate::LuaType for $name {
+            const NAME: &'static str = $lua_name;
+            const KIND: $crate::ProxyKind = $crate::ProxyKind::Args;
 
-        impl $name {
-            pub fn merge_style(&self, style: &mut $style) {
-                $(
-                    $crate::merge(&mut style.$ident, &self.$ident);
-                )*
+            fn lua_fields() -> &'static [$crate::LuaField] {
+                &[
+                    $($crate::LuaField {
+                        name: stringify!($ident),
+                        ty: $lua_ty,
+                        doc: $field_doc
+                    }),*
+                ]
             }
         }
     };
 }
 
 #[macro_export]
-macro_rules! make_class {
+macro_rules! make_enum {
     (enum $kind:ident is $name:tt {
-        $(
-            #[doc = $doc:expr]
-            $ident:ident = $display:expr
-        )*
-    }) => {
-        make_class! {
-            @no_style $kind is $name {
-                $(
-                    #[doc = $doc]
-                    $ident = $display
-                )*
-            }
-        }
-    };
-
-    (@inner $kind:ident is $name:tt {
         $(
             #[doc = $doc:expr]
             $ident:ident = $display:expr
@@ -122,16 +102,35 @@ macro_rules! make_class {
                 })
             }
         }
-    };
 
-    (@no_style $kind:ident is $name:tt {
+        impl $crate::LuaType for $kind {
+            const NAME: &'static str = $name;
+            const KIND: $crate::ProxyKind = $crate::ProxyKind::Enum;
+
+            fn lua_functions() -> &'static [$crate::LuaFunction] {
+                &[
+                    $($crate::LuaFunction {
+                        name: $display,
+                        doc: $doc
+                    }),*
+                ]
+            }
+        }
+
+        impl $crate::Proxy for $kind {}
+    };
+}
+
+#[macro_export]
+macro_rules! make_class {
+    (class $kind:ident is $name:expr ; $proxy:path {
         $(
             #[doc = $doc:expr]
-            $ident:ident = $display:expr
+            $ident:ident = $display:expr ; $path:path
         )*
     }) => {
-        make_class! {
-            @inner $kind is $name {
+        make_enum! {
+            enum $kind is $name {
                 $(
                     #[doc = $doc]
                     $ident = $display
@@ -139,253 +138,94 @@ macro_rules! make_class {
             }
         }
 
-        impl $crate::Proxy for $kind {
-            const KIND: $crate::ProxyKind = $crate::ProxyKind::Enum;
-            const NAME: &'static str = $name;
-            const STYLE: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]> = None;
-
-            fn lua_bindings() -> &'static [(&'static str, &'static str,)] {
-                &[$(($display, $doc)),*]
-            }
-        }
-    };
-
-    (@style_docs $kind:ident is $name:tt {
-        $(
-            #[doc = $doc:expr]
-            $ident:ident = $display:expr
-        )*
-    } and {
-        $(
-            #[doc = $style_doc:expr]
-            $style_ident:ident = $style_ty:ty ; $lua_ty:expr
-        )*
-    }) => {
-        make_class! {
-            @inner $kind is $name {
-                $(
-                    #[doc = $doc]
-                    $ident = $display
-                )*
-            }
-        }
-
-        impl $crate::Proxy for $kind {
-            const KIND: $crate::ProxyKind = $crate::ProxyKind::Enum;
-            const NAME: &'static str = $name;
-            const STYLE: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]> = Some(move|| {
-                &[ $((stringify!($style_ident), $lua_ty, $style_doc)),* ]
-            });
-
-            fn lua_bindings() -> &'static [(&'static str, &'static str,)] {
-                &[ $(($display, $doc)),* ]
+        impl $crate::proxy::TranslateClass for $kind {
+            type Style = $proxy;
+            fn translate(
+                &self,
+                palette: &too::view::Palette,
+                options: too::view::StyleOptions<<Self::Style as too::view::Style>::Args>,
+            ) -> Self::Style {
+                match self {
+                    $( Self::$ident => $path(palette, options),)*
+                }
             }
         }
     };
 }
 
 #[macro_export]
-macro_rules! make_proxy {
-    (
-        $params_ident:ident {
-            class: $class_ident:ident is $name:tt {
-                $(
-                    #[doc = $doc:expr]
-                    $variant:ident = $display:expr ; $style_func:path
-                )*
-            }
-            style: $style_ident:ident => $proxy_name:path {
-                $(
-                    #[doc = $style_doc:expr]
-                    $field:ident = $ty:ty ; $lua_ty:expr
-                )*
-            }
-        }
-    ) => {
-        make_class! {
-            @style_docs
-            $class_ident is $name {
-                $(
-                    #[doc = $doc]
-                    $variant = $display
-                )*
-            } and {
-                $(
-                    #[doc = $style_doc]
-                    $field = $ty ; $lua_ty
-                )*
-            }
-        }
-
-        make_style! {
-            $style_ident => $proxy_name {
-                $(
-                    #[doc = $style_doc]
-                    $field = $ty
-                )*
-            }
-        }
-
-        make_proxy! {
-            @inner $params_ident {
-                class: $class_ident is $name {
-                    $(
-                        #[doc = $doc]
-                        $variant = $display ; $style_func
-                    )*
-                }
-                style: $style_ident => $proxy_name {
-                    $(
-                        #[doc = $style_doc]
-                        $field = $ty
-                    )*
-                }
-            }
-        }
-
-        make_proxy!(@apply
-            $params_ident {
-                class: $class_ident is $name {
-                    $(
-                        #[doc = $doc]
-                        $variant = $display ; $style_func
-                    )*
-                }
-                style: $style_ident => $proxy_name {
-                    $(
-                        #[doc = $style_doc]
-                        $field = $ty
-                    )*
-                }
-            }
-        );
-    };
-
-    (
-        $params_ident:ident {
-            class: $class_ident:ident is $name:tt {
-                $(
-                    #[doc = $doc:expr]
-                    $variant:ident = $display:expr ; $style_func:path
-                )*
-            }
-            manual style: $style_ident:ident => $proxy_name:path {
-                $(
-                    #[doc = $style_doc:expr]
-                    $field:ident = $ty:ty ; $lua_ty:expr
-                )*
-            }
-        }
-    ) => {
-        make_class! {
-            @style_docs $class_ident is $name {
-                $(
-                    #[doc = $doc]
-                    $variant = $display
-                )*
-            } and {
-                $(
-                    #[doc = $style_doc]
-                    $field = $ty ; $lua_ty
-                )*
-            }
-        }
-
-        make_style! {
-            @no_merge $style_ident => $proxy_name {
-                $(
-                    #[doc = $style_doc]
-                    $field = $ty
-                )*
-            }
-        }
-
-        make_proxy!(@inner
-            $params_ident {
-                class: $class_ident is $name {
-                    $(
-                        #[doc = $doc]
-                        $variant = $display ; $style_func
-                    )*
-                }
-                style: $style_ident => $proxy_name {
-                    $(
-                        #[doc = $style_doc]
-                        $field = $ty
-                    )*
-                }
-            }
-        );
-    };
-
-    (@apply
-        $params_ident:ident {
-            class: $class_ident:ident is $name:tt {
-                $(
-                    #[doc = $doc:expr]
-                    $variant:ident = $display:expr ; $style_func:path
-                )*
-            }
-            style: $style_ident:ident => $proxy_name:path {
-                $(
-                    #[doc = $style_doc:expr]
-                    $field:ident = $ty:ty
-                )*
-            }
+macro_rules! make_style {
+    (style $kind:ident is $name:expr ; $proxy:path {
+        $(
+            #[doc = $doc:expr]
+            $ident:ident = $display:path ; $lua_ty:expr
+        )*
     }) => {
-        impl $params_ident {
-            pub fn apply(self) -> impl Fn(&too::view::Palette, too::view::StyleOptions<<$proxy_name as too::view::Style>::Args>) -> $proxy_name {
-                move |palette, options| {
-                    let mut default = match self.class {
-                        $(
-                            Some($class_ident::$variant) => $style_func(palette, options),
-                        )*
-                        None => too::view::Style::default(palette, options)
-                    };
+        make_struct! {
+            struct $kind is $name {
+                $(
+                    #[doc = $doc]
+                    $ident = $display ; $lua_ty
+                )*
+            }
+        }
 
-                    if let Some(style) = &self.style {
-                        style.merge_style(&mut default);
-                    }
-                    default
-                }
+        impl $crate::proxy::MergeStyle for $kind {
+            type Style = $proxy;
+            fn merge_style(&self, style: &mut Self::Style) {
+                $( $crate::merge(&mut style.$ident, &self.$ident); )*
             }
         }
     };
 
-    (@inner
-        $params_ident:ident {
-            class: $class_ident:ident is $name:tt {
+    (manual style $kind:ident is $name:expr ; $proxy:path {
+        $(
+            #[doc = $doc:expr]
+            $ident:ident = $display:path ; $lua_ty:expr
+        )*
+    }) => {
+        make_struct! {
+            struct $kind is $name {
                 $(
-                    #[doc = $doc:expr]
-                    $variant:ident = $display:expr ; $style_func:path
+                    #[doc = $doc]
+                    $ident = $display ; $lua_ty
                 )*
-             }
-            style: $style_ident:ident => $proxy_name:path {
-                $(
-                    #[doc = $style_doc:expr]
-                    $field:ident = $ty:ty
-                )*
-            }
-        }
-    ) => {
-        pub struct $params_ident {
-            pub style: Option<$style_ident>,
-            pub class: Option<$class_ident>,
-        }
-
-        impl mlua::FromLua for $params_ident {
-            fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-                let mlua::Value::Table(table) = value else {
-                    return Err(mlua::Error::runtime(format!("expected a table, got {}", value.type_name())));
-                };
-
-                Ok(Self {
-                    // TODO optional constraint
-                    // so ui.whatever { contraint = Constraint.min_width(10), .. stuff }
-                    style: table.get("style")?,
-                    class: table.get("class")?,
-                })
             }
         }
     };
+}
+
+pub trait Params<S: Style>: 'static + Sized {
+    type Class: TranslateClass<Style = S>;
+    type Style: MergeStyle<Style = S>;
+
+    fn class(&self) -> &Option<Self::Class>;
+    fn style(&self) -> &Option<Self::Style>;
+
+    fn apply_styling(self) -> impl Fn(&Palette, StyleOptions<S::Args>) -> S + 'static {
+        move |palette, options| {
+            let mut default = match self.class() {
+                Some(class) => class.translate(palette, options),
+                None => too::view::Style::default(palette, options),
+            };
+            if let Some(style) = self.style() {
+                style.merge_style(&mut default);
+            }
+            default
+        }
+    }
+}
+
+pub trait TranslateClass: 'static {
+    type Style: Style;
+    fn translate(
+        &self,
+        palette: &Palette,
+        options: StyleOptions<<Self::Style as Style>::Args>,
+    ) -> Self::Style;
+}
+
+pub trait MergeStyle: 'static {
+    type Style;
+    fn merge_style(&self, style: &mut Self::Style);
 }

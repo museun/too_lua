@@ -1,65 +1,71 @@
-use too::view::{Ui, ViewExt as _};
+use mlua::AnyUserData;
+use too::view::{Style as _, Ui, ViewExt as _};
 
 use crate::{
     bindings::Value,
-    mapping::{Binding, Field},
-    Context, Mapping,
+    mapping::{BindingSpec, BindingView},
+    Context, LuaType, Mapping,
 };
 
 use super::Color;
 
-crate::make_proxy! {
-    TodoParams {
-        class:
-        TodoClass is "Todo" {
-            /// The default style
-            Default  = "default" ; too::views::TodoStyle::default
-        }
+make_class! {
+    class TodoClass is "Todo" ; too::views::TodoStyle {
+        /// The default style
+        Default  = "default" ; too::views::TodoStyle::default
+    }
+}
 
-        manual style:
-        TodoStyle => too::views::TodoStyle {
-            /// When selected, the text should be bold
-            bold          = Option<bool> ; "boolean?"
-            /// When selected, the text should be faint
-            faint         = Option<bool> ; "boolean?"
-            /// When selected, the text should be italic
-            italic        = Option<bool> ; "boolean?"
-            /// When selected, the text should be underline
-            underline     = Option<bool> ; "boolean?"
-            /// When selected, the text should be blink
-            blink         = Option<bool> ; "boolean?"
-            /// When selected, the text should be reverse
-            reverse       = Option<bool> ; "boolean?"
-            /// When selected, the text should be strikeout
-            strikeout     = Option<bool> ; "boolean?"
-            //
-            /// The color of the text
-            text_color    = Option<Color> ; "Color?"
-            /// The color of the text, when hovered
-            hovered_color = Option<Color> ; "Color?"
-        }
+make_style! {
+    manual style TodoStyle is "TodoStyle" ; too::views::TodoStyle {
+        /// When selected, the text should be bold
+        bold          = Option<bool> ; "boolean?"
+        /// When selected, the text should be faint
+        faint         = Option<bool> ; "boolean?"
+        /// When selected, the text should be italic
+        italic        = Option<bool> ; "boolean?"
+        /// When selected, the text should be underline
+        underline     = Option<bool> ; "boolean?"
+        /// When selected, the text should be blink
+        blink         = Option<bool> ; "boolean?"
+        /// When selected, the text should be reverse
+        reverse       = Option<bool> ; "boolean?"
+        /// When selected, the text should be strikeout
+        strikeout     = Option<bool> ; "boolean?"
+        //
+        /// The color of the text
+        text_color    = Option<Color> ; "Color?"
+        /// The color of the text, when hovered
+        hovered_color = Option<Color> ; "Color?"
+    }
+}
+
+make_struct! {
+    struct TodoParams is "TodoParams" {
+        /// The class of the selected value
+        class = Option<TodoClass> ; "Todo?"
+        /// The style of the selected value
+        style = Option<TodoStyle> ; "TodoStyle?"
+        /// The text of the selected value
+        text = String             ; "string"
+        /// The state of the selected value, a boolean
+        value = AnyUserData       ; "Value"
     }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct TodoValue;
 
-impl TodoValue {
-    binding! {
+impl BindingView for TodoValue {
+    const SPEC: BindingSpec = binding! {
         /// A selected value
-        "todo_value" => "todo_value" {
-            /// The style of the selected value
-            style "TodoStyle?"
-            /// The class of the selected value
-            class "Todo?"
-            /// The text of the selected value
-            text "string | lazy_args"
-            /// The state of the selected value, a boolean
-            value "Value"
-        }
-    }
+        "todo_value" => TodoParams::NAME
+    };
 
-    pub fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
+    type Params = TodoParams;
+    type Style = TodoStyle;
+
+    fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
         let Ok(params) = ctx.params::<TodoParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "todo", "params");
         };

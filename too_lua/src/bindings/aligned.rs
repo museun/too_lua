@@ -1,12 +1,13 @@
+use mlua::FromLua;
 use too::view::Ui;
 
 use crate::{
-    mapping::{Binding, Field},
-    Context, Mapping,
+    mapping::{BindingSpec, BindingView},
+    Context, LuaType as _, Mapping,
 };
 
 crate::make_enum! {
-    enum AlignedParams is "Aligned" {
+    enum AlignedKind is "Aligned" {
         /// Align to the horizontal left and vertical top
         LeftTop      = "left_top"
         /// Align to the horizontal center and vertical top
@@ -28,34 +29,41 @@ crate::make_enum! {
     }
 }
 
+crate::make_struct! {
+    struct AlignParams is "AlignParams" {
+        /// Alignment for its children
+        align = AlignedKind ; "Aligned"
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Aligned;
 
-impl Aligned {
-    binding! {
+impl BindingView for Aligned {
+    const SPEC: BindingSpec = binding! {
         /// Align its children at a specific anchor
-        "aligned" => "aligned" {
-            /// Alignment for the children
-            align "Aligned"
-        }
-    }
+        "aligned" => AlignParams::NAME
+    };
 
-    pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(Ok(aligned)) = ctx.params_field::<AlignedParams>("align") else {
+    type Params = AlignParams;
+    type Style = ();
+
+    fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+        let Ok(aligned) = AlignParams::from_lua(ctx.current.data.clone(), ctx.lua) else {
             return Mapping::report_missing(ui, ctx.id, "aligned");
         };
 
         use too::layout::Align2;
-        let align = match aligned {
-            AlignedParams::LeftTop => Align2::LEFT_TOP,
-            AlignedParams::CenterTop => Align2::CENTER_TOP,
-            AlignedParams::RightTop => Align2::RIGHT_TOP,
-            AlignedParams::LeftCenter => Align2::LEFT_CENTER,
-            AlignedParams::CenterCenter => Align2::CENTER_CENTER,
-            AlignedParams::RightCenter => Align2::RIGHT_CENTER,
-            AlignedParams::LeftBottom => Align2::LEFT_BOTTOM,
-            AlignedParams::CenterBottom => Align2::CENTER_BOTTOM,
-            AlignedParams::RightBottom => Align2::RIGHT_BOTTOM,
+        let align = match aligned.align {
+            AlignedKind::LeftTop => Align2::LEFT_TOP,
+            AlignedKind::CenterTop => Align2::CENTER_TOP,
+            AlignedKind::RightTop => Align2::RIGHT_TOP,
+            AlignedKind::LeftCenter => Align2::LEFT_CENTER,
+            AlignedKind::CenterCenter => Align2::CENTER_CENTER,
+            AlignedKind::RightCenter => Align2::RIGHT_CENTER,
+            AlignedKind::LeftBottom => Align2::LEFT_BOTTOM,
+            AlignedKind::CenterBottom => Align2::CENTER_BOTTOM,
+            AlignedKind::RightBottom => Align2::RIGHT_BOTTOM,
         };
 
         ui.aligned(align, |ui| ctx.visit_children(mapping, ui));

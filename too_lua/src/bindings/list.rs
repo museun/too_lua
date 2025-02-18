@@ -1,11 +1,28 @@
-use too::{layout::Axis, view::Ui};
+use too::view::Ui;
 
+use super::{Axis, CrossAlign, Justify};
 use crate::{Context, Mapping};
 
-use super::{CrossAlign, Justify};
+make_struct! {
+    struct ListParams is "ListParams" {
+        /// Axis for the list
+        axis        = Option<Axis>       ; "Axis?"
+        /// Justification for children on the vertical axis
+        justify     = Option<Justify>    ; "Justify?"
+        /// Alignment for children on the horizontal axis
+        cross_align = Option<CrossAlign> ; "CrossAlign?"
+        /// Gap between children
+        gap         = Option<u16>        ; "integer?"
+        /// Should this be scrollable?
+        scrollable  = Option<bool>       ; "boolean?"
+    }
+}
 
 pub fn list(mapping: &Mapping, ui: &Ui, ctx: Context, axis: Axis) {
-    let mut list = too::views::list().axis(axis);
+    let mut list = too::views::list().axis(match axis {
+        Axis::Vertical => too::layout::Axis::Vertical,
+        Axis::Horizontal => too::layout::Axis::Horizontal,
+    });
 
     if let Some(justify) = ctx.params_field_opt::<Justify>("justify") {
         let justify = match justify {

@@ -1,14 +1,19 @@
-use std::{borrow::Cow, collections::BTreeSet};
+use std::{
+    borrow::Cow,
+    collections::{BTreeSet, HashSet},
+};
 
 #[macro_use]
 mod macros;
+pub use macros::{MergeStyle, Params, TranslateClass};
 
 use crate::{
     bindings::{
-        Align, AlignedParams, Axis, BorderClass, BorderKind, ButtonClass, CheckboxClass,
-        Constraint, CrossAlign, Justify, LabelClass, ProgressClass, SelectedClass, SliderClass,
-        TodoClass, ToggleClass, Value,
+        Align, AlignedKind, Axis, BorderClass, BorderKind, ButtonClass, CheckboxClass, Constraint,
+        CrossAlign, Justify, LabelClass, ProgressClass, SelectedClass, SliderClass, TodoClass,
+        ToggleSwitchClass, Value,
     },
+    mapping::BindingArgs,
     Bindings,
 };
 
@@ -39,10 +44,10 @@ impl Proxies {
         proxy::<SelectedClass>(),
         proxy::<SliderClass>(),
         proxy::<TodoClass>(),
-        proxy::<ToggleClass>(),
+        proxy::<ToggleSwitchClass>(),
         // enums
         proxy::<Align>(),
-        proxy::<AlignedParams>(),
+        proxy::<AlignedKind>(),
         proxy::<Axis>(),
         proxy::<BorderKind>(),
         proxy::<CrossAlign>(),
@@ -63,18 +68,41 @@ impl Proxies {
     }
 }
 
-pub trait Proxy: mlua::UserData + 'static {
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct LuaFunction {
+    pub name: &'static str,
+    pub doc: &'static str,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct LuaField {
+    pub name: &'static str,
+    pub doc: &'static str,
+    pub ty: &'static str,
+}
+
+pub trait LuaType: 'static {
     const NAME: &'static str;
     const KIND: ProxyKind;
 
-    // TODO figure out a better place for this
-    const STYLE: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]>;
+    fn lua_fields() -> &'static [LuaField] {
+        &[]
+    }
 
+    fn lua_functions() -> &'static [LuaFunction] {
+        &[]
+    }
+}
+
+impl LuaType for () {
+    const NAME: &'static str = "";
+    const KIND: ProxyKind = ProxyKind::Ignore;
+}
+
+pub trait Proxy: mlua::UserData + LuaType {
     fn create(lua: &mlua::Lua) -> mlua::Result<()> {
         lua.globals().set(Self::NAME, lua.create_proxy::<Self>()?)
     }
-
-    fn lua_bindings() -> &'static [(&'static str, &'static str)];
 }
 
 pub const fn proxy<T: Proxy>() -> ProxyObject {
@@ -82,8 +110,8 @@ pub const fn proxy<T: Proxy>() -> ProxyObject {
         kind: T::KIND,
         name: T::NAME,
         create: T::create,
-        bindings: T::lua_bindings,
-        style: T::STYLE,
+        functions: T::lua_functions,
+        fields: T::lua_fields,
     }
 }
 
@@ -92,21 +120,19 @@ pub struct ProxyObject {
     kind: ProxyKind,
     name: &'static str,
     create: fn(&mlua::Lua) -> mlua::Result<()>,
-    bindings: fn() -> &'static [(&'static str, &'static str)],
-    // TODO redo this
-    style: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]>,
+    functions: fn() -> &'static [LuaFunction],
+    fields: fn() -> &'static [LuaField],
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ProxyKind {
     Value,
     Enum,
+    Args,
+    Ignore,
 }
 
-pub(crate) fn initialize<'i>(
-    proxies: impl IntoIterator<Item = &'i ProxyObject>,
-    lua: &mlua::Lua,
-) -> mlua::Result<()> {
+pub(crate) fn initialize(proxies: &Proxies, lua: &mlua::Lua) -> mlua::Result<()> {
     proxies
         .into_iter()
         .try_for_each(|proxy| (proxy.create)(lua))
@@ -162,18 +188,20 @@ pub fn generate(proxies: &Proxies, bindings: &Bindings) -> String {
         match object.kind {
             ProxyKind::Value => {
                 _ = writeln!(&mut out, "---@class (exact) {}", object.name);
-                let bindings = (object.bindings)();
-                for (binding, doc) in bindings {
-                    _ = writeln!(&mut out, "---@field {binding} {doc}");
+                let bindings = (object.functions)();
+                for LuaFunction { name, doc } in bindings {
+                    _ = writeln!(&mut out, "---@field {name} {doc}");
                 }
                 _ = writeln!(&mut out, "{} = {{}}", object.name);
                 _ = writeln!(&mut out);
             }
+
             ProxyKind::Enum => {
-                if let Some(style) = object.style {
+                let styles = (object.fields)();
+                if !styles.is_empty() {
                     _ = writeln!(&mut out, "---@class (exact) {}Style", object.name);
-                    for (field, ty, doc) in (style)() {
-                        _ = writeln!(&mut out, "---@field {field} {ty} {doc}")
+                    for LuaField { name, ty, doc } in styles {
+                        _ = writeln!(&mut out, "---@field {name} {ty} {doc}")
                     }
                     _ = writeln!(&mut out, "{}Style = {{}}", object.name);
                     _ = writeln!(&mut out);
@@ -181,32 +209,53 @@ pub fn generate(proxies: &Proxies, bindings: &Bindings) -> String {
 
                 _ = writeln!(&mut out, "---@enum {}", object.name);
                 _ = writeln!(&mut out, "{} = {{", object.name);
-                let bindings = (object.bindings)();
-                let padding = bindings.iter().fold(0, |max, (s, _)| max.max(s.len()));
-                for (i, (binding, doc)) in bindings.iter().enumerate() {
+                let bindings = (object.functions)();
+                let padding = bindings
+                    .iter()
+                    .fold(0, |max, LuaFunction { name, .. }| max.max(name.len()));
+
+                for (i, LuaFunction { name, doc }) in bindings.iter().enumerate() {
                     _ = writeln!(&mut out, "    --- {doc}");
                     _ = writeln!(
                         &mut out,
-                        "    {binding}{sp:padding$} = {i},",
+                        "    {name}{sp:padding$} = {i},",
                         sp = "",
-                        padding = padding - binding.len()
+                        padding = padding - name.len()
                     );
                 }
                 _ = writeln!(&mut out, "}}");
                 _ = writeln!(&mut out);
             }
+
+            ProxyKind::Args => {
+                let styles = (object.fields)();
+                if !styles.is_empty() {
+                    _ = writeln!(&mut out, "---@class (exact) {}Args", object.name);
+                    for LuaField { name, ty, doc } in styles {
+                        _ = writeln!(&mut out, "---@field {name} {ty} {doc}")
+                    }
+                    _ = writeln!(&mut out, "{}Args = {{}}", object.name);
+                    _ = writeln!(&mut out);
+                }
+            }
+
+            ProxyKind::Ignore => {}
         }
     }
 
-    let bindings = bindings.into_iter().collect::<Vec<_>>();
-    for (binding, ..) in &bindings {
-        _ = writeln!(
-            &mut out,
-            "---@class {name} {doc}",
-            name = binding.name,
-            doc = binding.doc
-        );
-        for field in binding.fields {
+    let mut seen_params = HashSet::new();
+    // params for views
+    for (binding, ..) in bindings {
+        let BindingArgs::Named(name) = binding.args else {
+            continue;
+        };
+
+        if !seen_params.insert(name) {
+            continue;
+        }
+
+        _ = writeln!(&mut out, "---@class {name} {doc}", doc = binding.doc);
+        for field in (binding.fields)() {
             _ = writeln!(
                 &mut out,
                 "---@field {name} {ty} {doc}",
@@ -215,14 +264,31 @@ pub fn generate(proxies: &Proxies, bindings: &Bindings) -> String {
                 doc = field.doc
             );
         }
+        _ = writeln!(&mut out, "{name } = {{}}");
         _ = writeln!(&mut out);
+
+        if !binding.params.name.is_empty() && seen_params.insert(binding.params.name) {
+            _ = writeln!(&mut out, "---@class {name}", name = binding.params.name);
+            for field in binding.params.fields {
+                _ = writeln!(
+                    &mut out,
+                    "---@field {name} {ty} {doc}",
+                    name = field.name,
+                    ty = field.ty,
+                    doc = field.doc
+                );
+            }
+            _ = writeln!(&mut out, "{name } = {{}}", name = binding.params.name);
+            _ = writeln!(&mut out);
+        }
     }
 
     _ = writeln!(&mut out, "---@class ui");
     for (binding, ..) in bindings {
         let args = match binding.args {
-            Some(args) => Cow::Owned(format!("args: {args}")),
-            None => Cow::Borrowed(""),
+            BindingArgs::Named(args) => Cow::Owned(format!("args: {args}")),
+            BindingArgs::Any => Cow::Borrowed("args: any"),
+            BindingArgs::None => Cow::Borrowed(""),
         };
 
         _ = writeln!(

@@ -1,28 +1,37 @@
 use too::view::Ui;
 
 use crate::{
-    mapping::{Binding, Field},
-    Context, Mapping,
+    mapping::{BindingSpec, BindingView},
+    Context, LuaType, Mapping,
 };
 
 use super::Color;
 
+crate::make_struct! {
+    struct FillParams is "FillParams" {
+        /// Use this color to fill the area
+        background = Color       ; "string"
+        /// Optional width to allocate
+        width      = Option<u16> ; "integer?"
+        /// Optional height to allocate
+        height     = Option<u16> ; "integer?"
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Fill;
 
-impl Fill {
-    binding! {
+impl BindingView for Fill {
+    const SPEC: BindingSpec = binding! {
         /// Fill the childrens area, with an optional size constraint
-        "fill" => "fill" {
-            /// Use this color to fill the area
-            background "string"
-            /// Optional space to allocate
-            space "{width: integer?, height: integer?}"
-        }
-    }
+        "fill" => FillParams::NAME
+    };
 
-    pub fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(Ok(Color(rgba))) = ctx.params_field::<Color>("background") else {
+    type Params = FillParams;
+    type Style = ();
+
+    fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
+        let Some(Ok(color)) = ctx.params_field::<Color>("background") else {
             return Mapping::report_missing_data(ui, ctx.id, "fill", "background");
         };
 
@@ -33,9 +42,9 @@ impl Fill {
             let Ok(height) = table.get::<u16>("height") else {
                 return Mapping::report_missing_data(ui, ctx.id, "fill", "space.height");
             };
-            ui.show(too::views::Fill::new(rgba, (width as i32, height as i32)));
+            ui.show(too::views::Fill::new(color, (width as i32, height as i32)));
         } else {
-            ui.show(too::views::Fill::fill_with(rgba));
+            ui.show(too::views::Fill::fill_with(color));
         }
     }
 }

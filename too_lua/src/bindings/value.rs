@@ -1,6 +1,9 @@
 use mlua::{AnyUserData, IntoLua as _};
 
-use crate::proxy::{Proxy, ProxyKind};
+use crate::{
+    proxy::{LuaFunction, Proxy, ProxyKind},
+    LuaType,
+};
 
 #[derive(Clone, Debug)]
 pub enum Value {
@@ -94,29 +97,30 @@ impl mlua::UserData for Value {
     }
 }
 
-impl Proxy for Value {
-    const KIND: ProxyKind = ProxyKind::Value;
+impl LuaType for Value {
     const NAME: &'static str = "Value";
-    const STYLE: Option<fn() -> &'static [(&'static str, &'static str, &'static str)]> = None;
+    const KIND: ProxyKind = ProxyKind::Value;
 
-    fn lua_bindings() -> &'static [(&'static str, &'static str)] {
+    fn lua_functions() -> &'static [LuaFunction] {
         &[
-            (
-                "new fun(value: integer|number|boolean|string): Value",
-                "create a new value",
-            ),
-            (
-                "persist fun(id: string, value: integer|number|boolean|string): Value",
-                "create a new value, persisted and accessible via `id`",
-            ),
-            (
-                "destroy fun(id: string): boolean",
-                "destroys a persisted value `id`, if it exists",
-            ),
-            (
-                "value integer|number|boolean|string", //
-                "get the inner value",
-            ),
+            LuaFunction {
+                name: "new fun(value: integer|number|boolean|string): Value",
+                doc: "create a new value",
+            },
+            LuaFunction {
+                name: "persist fun(id: string, value: integer|number|boolean|string): Value",
+                doc: "create a new value, persisted and accessible via `id`",
+            },
+            LuaFunction {
+                name: "destroy fun(id: string): boolean",
+                doc: "destroys a persisted value `id`, if it exists",
+            },
+            LuaFunction {
+                name: "value integer|number|boolean|string",
+                doc: "get the inner value",
+            },
         ]
     }
 }
+
+impl Proxy for Value {}

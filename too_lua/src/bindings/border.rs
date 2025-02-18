@@ -2,11 +2,12 @@ use too::view::{Style as _, Ui, ViewExt as _};
 
 use crate::{
     bindings::Color,
-    mapping::{Binding, Field},
-    Context, Mapping,
+    mapping::{BindingSpec, BindingView},
+    proxy::Params,
+    Context, LuaType, Mapping,
 };
 
-crate::make_enum! {
+make_enum! {
     enum BorderKind is "BorderKind" {
         /// No border
         Empty     = "empty"
@@ -27,47 +28,64 @@ crate::make_enum! {
     }
 }
 
-make_proxy! {
-    BorderParams {
-        class:
-        BorderClass is "Border" {
-            /// The default style
-            Default      = "default"     ; too::views::BorderStyle::default
-            /// An interactive style
-            Interactive  = "interactive" ; too::views::BorderStyle::interactive
-        }
+make_class! {
+    class BorderClass is "Border"    ; too::views::BorderStyle {
+        /// The default style
+        Default      = "default"     ; too::views::BorderStyle::default
+        /// An interactive style
+        Interactive  = "interactive" ; too::views::BorderStyle::interactive
+    }
+}
 
-        style:
-        BorderStyle => too::views::BorderStyle {
-            /// The frame title color
-            title          = Option<Color> ; "Color?"
-            /// The color of the border
-            border         = Option<Color> ; "Color?"
-            /// The color of the border, when focused
-            border_focused = Option<Color> ; "Color?"
-            /// The color of the border, when hovered
-            border_hovered = Option<Color> ; "Color?"
-        }
+make_style! {
+    style BorderStyle is "BorderStyle" ; too::views::BorderStyle {
+        /// The frame title color
+        title          = Option<Color> ; "Color?"
+        /// The color of the border
+        border         = Option<Color> ; "Color?"
+        /// The color of the border, when focused
+        border_focused = Option<Color> ; "Color?"
+        /// The color of the border, when hovered
+        border_hovered = Option<Color> ; "Color?"
+    }
+}
+
+make_struct! {
+    struct BorderParams is "BorderParams" {
+        /// The style of the border
+        style  = Option<BorderStyle> ; "BorderStyle?"
+        /// The class of the border
+        class  = Option<BorderClass> ; "Border?"
+        /// The border to use
+        border = BorderKind          ; "BorderKind"
+    }
+}
+
+impl Params<too::views::BorderStyle> for BorderParams {
+    type Class = BorderClass;
+    type Style = BorderStyle;
+
+    fn class(&self) -> &Option<Self::Class> {
+        &self.class
+    }
+    fn style(&self) -> &Option<Self::Style> {
+        &self.style
     }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Border;
 
-impl Border {
-    binding! {
+impl BindingView for Border {
+    const SPEC: BindingSpec = binding! {
         /// Border to surround its children
-        "border" => "border" {
-            /// The style of the border
-            style "BorderStyle?"
-            /// The class of the border
-            class "Border?"
-            /// The border to use
-            border "BorderKind"
-        }
-    }
+        "border" => BorderParams::NAME
+    };
 
-    pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+    type Params = BorderParams;
+    type Style = BorderStyle;
+
+    fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         let Ok(params) = ctx.params::<BorderParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "border", "params");
         };
@@ -88,7 +106,8 @@ impl Border {
             BorderKind::ThickWide => Border::THICK_WIDE,
         };
 
-        let view = too::views::border(border).class(params.apply());
+        let view = too::views::border(border).class(params.apply_styling());
+
         ui.show_children(view, |ui| ctx.visit_children(mapping, ui));
     }
 }

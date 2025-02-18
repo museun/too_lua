@@ -1,20 +1,23 @@
 use too::view::Ui;
 
 use crate::{
-    mapping::{Binding, Field},
+    mapping::{BindingSpec, BindingView},
     Context, Mapping,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Container;
 
-impl Container {
-    binding! {
-        /// A container that just groups multiple calls into one parent
-        "container" => "any" { }
-    }
+impl BindingView for Container {
+    const SPEC: BindingSpec = binding! {
+        /// "A container that just groups multiple calls into one parent"
+        "container" => any
+    };
 
-    pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+    type Params = ();
+    type Style = ();
+
+    fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         ctx.visit_children(mapping, ui);
     }
 }

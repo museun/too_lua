@@ -1,30 +1,25 @@
-use too::{layout::Axis, view::Ui};
+use too::view::Ui;
 
 use crate::{
-    mapping::{Binding, Field},
-    Context, Mapping,
+    mapping::{BindingSpec, BindingView},
+    Context, LuaType, Mapping,
 };
+
+use super::ListParams;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Horizontal;
 
-impl Horizontal {
-    binding! {
+impl BindingView for Horizontal {
+    const SPEC: BindingSpec = binding! {
         /// Horizontal layout of children
-        "horizontal" => "horizontal" {
-            // TODO this can be styled
-            /// Justification for children on the horizontal axis
-            justify "Justify?"
-            /// Alignment for children on the vertical axis
-            cross_align "CrossAlign?"
-            /// Gap between children
-            gap "integer?"
-            /// Should this be scrollable?
-            scrollable "boolean?"
-        }
-    }
+        "horizontal" => ListParams::NAME
+    };
 
-    pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        super::list::list(mapping, ui, ctx, Axis::Horizontal);
+    type Params = ListParams;
+    type Style = ();
+
+    fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+        super::list::list(mapping, ui, ctx, super::Axis::Horizontal);
     }
 }

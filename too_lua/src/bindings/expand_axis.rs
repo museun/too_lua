@@ -1,20 +1,23 @@
 use too::view::Ui;
 
 use crate::{
-    mapping::{Binding, Field},
+    mapping::{BindingSpec, BindingView},
     Context, Mapping,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct ExpandAxis;
 
-impl ExpandAxis {
-    binding! {
+impl BindingView for ExpandAxis {
+    const SPEC: BindingSpec = binding! {
         /// A view that expands the remainder of the space on the axis
-        "expand_axis" => { }
-    }
+        "expand_axis"
+    };
 
-    pub fn view(_mapping: &Mapping, ui: &Ui, _ctx: Context) {
+    type Params = ();
+    type Style = ();
+
+    fn view(_mapping: &Mapping, ui: &Ui, _ctx: Context) {
         ui.expand_axis();
     }
 }

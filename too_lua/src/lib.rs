@@ -8,7 +8,9 @@ mod runtime;
 
 #[macro_use]
 mod mapping;
-pub use mapping::{Binding, Context, Field, Indirect, Mapping};
+pub use mapping::{
+    Binding, BindingArgs, BindingParams, BindingSpec, BindingView, Context, Indirect, Mapping,
+};
 
 mod tree;
 pub use tree::{DebugNode, Tree};
@@ -22,8 +24,10 @@ use notifications::{Notification, Notifications};
 
 #[macro_use]
 mod proxy;
-pub use make_class as make_enum;
-pub use proxy::{generate, proxy, Proxies, Proxy, ProxyKind, ProxyObject};
+pub use proxy::{
+    generate, proxy, LuaField, LuaFunction, LuaType, MergeStyle, Params, Proxies, Proxy, ProxyKind,
+    ProxyObject, TranslateClass,
+};
 
 pub mod bindings;
 #[doc(inline)]

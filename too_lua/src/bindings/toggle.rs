@@ -1,25 +1,33 @@
+use mlua::AnyUserData;
 use too::view::Ui;
 
 use crate::{
-    mapping::{Binding, Field},
-    Context, Mapping,
+    mapping::{BindingSpec, BindingView},
+    Context, LuaType, Mapping,
 };
 
 use super::Value;
 
+make_struct! {
+    struct ToggleParams is "ToggleParams" {
+        /// The boolean state to use
+        value = AnyUserData ; "Value"
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Toggle;
 
-impl Toggle {
-    binding! {
+impl BindingView for Toggle {
+    const SPEC: BindingSpec = binding! {
         /// Conditionally show or hide a view
-        "toggle" => "toggle" {
-            /// The boolean state to use
-            value "Value"
-        }
-    }
+        "toggle" => ToggleParams::NAME
+    };
 
-    pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+    type Params = ToggleParams;
+    type Style = ();
+
+    fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         let Some(value) = ctx.value() else {
             return Mapping::report_missing_data(ui, ctx.id, "show", "value");
         };

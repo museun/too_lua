@@ -57,6 +57,7 @@ impl<'a> Context<'a> {
         }
     }
 
+    // TODO change all of this
     pub fn params_field_opt<T>(&self, key: &str) -> Option<T>
     where
         T: FromLua,
@@ -94,6 +95,10 @@ impl<'a> Context<'a> {
 
     pub fn text_ref(&self) -> Option<mlua::BorrowedStr<'_>> {
         self.current.data.as_str()
+    }
+
+    pub fn string(&self) -> Option<mlua::String> {
+        self.current.data.as_string().cloned()
     }
 
     pub fn value(&self) -> Option<UserDataRef<Value>> {

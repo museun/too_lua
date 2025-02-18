@@ -18,3 +18,9 @@ impl mlua::FromLua for Color {
         Ok(Self(color))
     }
 }
+
+impl From<Color> for Rgba {
+    fn from(value: Color) -> Self {
+        value.0
+    }
+}

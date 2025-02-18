@@ -1,35 +1,38 @@
 use too::view::Ui;
 
-use crate::{
-    mapping::{Binding, Field},
-    Context, Mapping,
-};
+use crate::{mapping::BindingView, Context, LuaType, Mapping};
+
+make_struct! {
+    struct MarginParams is "MarginParams" {
+        /// Padding to the left of the view
+        left       = Option<u16> ; "integer?"
+        /// Padding to the right of the view
+        right      = Option<u16> ; "integer?"
+        /// Padding to the top of the view
+        top        = Option<u16> ; "integer?"
+        /// Padding to the bottom of the view
+        bottom     = Option<u16> ; "integer?"
+        /// Padding on both left and right of the view
+        horizontal = Option<u16> ; "integer?"
+        /// Padding on both top and bottom of the view
+        vertical   = Option<u16> ; "integer?"
+        /// Padding on each side of the view
+        all        = Option<u16> ; "integer?"
+    }
+}
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Margin;
 
-impl Margin {
-    binding! {
+impl BindingView for Margin {
+    const SPEC: crate::mapping::BindingSpec = binding! {
         /// Margin applies padding to a view
-        "margin" => "margin" {
-            /// Padding to the left of the view
-            left "integer?"
-            /// Padding to the right of the view
-            right "integer?"
-            /// Padding to the top of the view
-            top "integer?"
-            /// Padding to the bottom of the view
-            bottom "integer?"
-            /// Padding on both left and right of the view
-            horizontal "integer?"
-            /// Padding on both top and bottom of the view
-            vertical "integer?"
-            /// Padding on each side of the view
-            all "integer?"
-        }
-    }
+        "margin" => MarginParams::NAME
+    };
+    type Params = MarginParams;
+    type Style = ();
 
-    pub fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+    fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         let Some(table) = ctx.tree.map[ctx.id].data.as_table() else {
             return Mapping::report_missing_data(ui, ctx.id, "margin", "margins");
         };
