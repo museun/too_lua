@@ -359,6 +359,12 @@ ProgressParams = {}
 ---@field filled string?  The character to use for the filled portion
 ProgressStyle = {}
 
+---@class RadioParams  A radio selection over multiple values
+---@field current any  The current value -- this gets updated when the radio is changed
+---@field choice any  b
+---@field text string  a
+RadioParams = {}
+
 ---@class SelectedParams  A selected boolean value
 ---@field style SelectedStyle?  The style of the selected value
 ---@field class Selected?  The class of the selected value
@@ -455,6 +461,7 @@ UnconstrainedParams = {}
 ---@field label fun(args: LabelParams | string | lazy_args): nil  Label displays some text
 ---@field margin fun(args: MarginParams): nil  Margin applies padding to a view
 ---@field progress fun(args: ProgressParams): nil  A progress bar
+---@field radio fun(args: RadioParams): nil  A radio selection over multiple values
 ---@field selected fun(args: SelectedParams): nil  A selected boolean value
 ---@field separator fun(): nil  Separator to divide some area
 ---@field slider fun(args: SliderParams): nil  A slider to adjust a value

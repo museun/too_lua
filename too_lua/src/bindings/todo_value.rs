@@ -65,7 +65,7 @@ impl BindingView for TodoValue {
     type Style = TodoStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.foo::<TodoParams>() else {
+        let Some(params) = ctx.params::<TodoParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "todo", "params");
         };
 

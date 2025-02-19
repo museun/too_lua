@@ -70,7 +70,7 @@ impl BindingView for Selected {
     type Style = SelectedStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.foo::<SelectedParams>() else {
+        let Some(params) = ctx.params::<SelectedParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "selected", "params");
         };
 

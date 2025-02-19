@@ -70,7 +70,7 @@ impl BindingView for Button {
     type Style = ButtonStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.foo::<ButtonParams>() else {
+        let Some(params) = ctx.params::<ButtonParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "button", "params");
         };
 

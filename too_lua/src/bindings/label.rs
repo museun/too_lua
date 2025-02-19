@@ -73,7 +73,7 @@ impl BindingView for Label {
         type Apply = fn(Label) -> Label;
         type Class = fn(&Palette, StyleOptions) -> LabelStyle;
 
-        let Some(params) = ctx.foo::<Either<String, LabelParams>>() else {
+        let Some(params) = ctx.params::<Either<String, LabelParams>>() else {
             return Mapping::report_missing_data(ui, ctx.id, "label", "params");
         };
 

@@ -44,7 +44,7 @@ impl<'a> Context<'a> {
         }
     }
 
-    pub fn foo<T: FromLua>(&self) -> Option<T> {
+    pub fn params<T: FromLua>(&self) -> Option<T> {
         T::from_lua(self.current.data.clone(), &self.lua).ok()
     }
 

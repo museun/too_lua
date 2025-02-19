@@ -87,7 +87,7 @@ impl BindingView for Border {
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         use too::renderer::Border;
-        let Some(params) = ctx.foo::<BorderParams>() else {
+        let Some(params) = ctx.params::<BorderParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "border", "params");
         };
 

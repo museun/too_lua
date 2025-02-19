@@ -32,7 +32,7 @@ impl BindingView for Fill {
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
         use too::views::Fill;
-        let Some(params) = ctx.foo::<FillParams>() else {
+        let Some(params) = ctx.params::<FillParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "fill", "params");
         };
 

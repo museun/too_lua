@@ -33,7 +33,7 @@ impl BindingView for Margin {
     type Style = ();
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.foo::<MarginParams>() else {
+        let Some(params) = ctx.params::<MarginParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "margin", "params");
         };
 

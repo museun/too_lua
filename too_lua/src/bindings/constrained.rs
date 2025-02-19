@@ -143,7 +143,7 @@ impl BindingView for Constrained {
         use too::views::Constrain;
         use ConstraintKind::*;
 
-        let Some(params) = ctx.foo::<ConstrainedParams>() else {
+        let Some(params) = ctx.params::<ConstrainedParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "constrained", "params");
         };
 

@@ -85,7 +85,7 @@ impl BindingView for ToggleSwitch {
     type Style = ToggleSwitchStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.foo::<ToggleSwitchParams>() else {
+        let Some(params) = ctx.params::<ToggleSwitchParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "toggle_switch", "params");
         };
 

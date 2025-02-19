@@ -71,7 +71,7 @@ impl BindingView for Checkbox {
     type Style = CheckboxStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.foo::<CheckboxParams>() else {
+        let Some(params) = ctx.params::<CheckboxParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "checkbox", "params");
         };
 

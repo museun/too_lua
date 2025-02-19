@@ -51,7 +51,7 @@ impl BindingView for Frame {
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         use too::renderer::Border;
 
-        let Some(params) = ctx.foo::<FrameParams>() else {
+        let Some(params) = ctx.params::<FrameParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "frame", "params");
         };
 

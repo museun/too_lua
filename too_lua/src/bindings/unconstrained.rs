@@ -29,7 +29,7 @@ impl BindingView for Unconstrained {
     type Style = ();
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.foo::<UnconstrainedParams>() else {
+        let Some(params) = ctx.params::<UnconstrainedParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "unconstrained", "params");
         };
 

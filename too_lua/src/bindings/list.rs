@@ -31,7 +31,7 @@ impl Default for ListParams {
 }
 
 pub fn list(mapping: &Mapping, ui: &Ui, ctx: Context, axis: Axis) {
-    let params = ctx.foo::<ListParams>().unwrap_or_default();
+    let params = ctx.params::<ListParams>().unwrap_or_default();
 
     let list = too::views::list()
         .axis(params.axis.unwrap_or(axis).into())

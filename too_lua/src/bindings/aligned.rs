@@ -50,7 +50,7 @@ impl BindingView for Aligned {
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         use too::layout::Align2;
 
-        let Some(params) = ctx.foo::<AlignParams>() else {
+        let Some(params) = ctx.params::<AlignParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "aligned", "params");
         };
 

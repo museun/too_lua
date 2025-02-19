@@ -32,6 +32,7 @@ impl Bindings {
         (Label::binding, Label::view),
         (Margin::binding, Margin::view),
         (Progress::binding, Progress::view),
+        (Radio::binding, Radio::view),
         (Selected::binding, Selected::view),
         (Separator::binding, Separator::view),
         (Slider::binding, Slider::view),
@@ -110,6 +111,9 @@ pub use margin::{Margin, MarginParams};
 
 mod progress;
 pub use progress::{Progress, ProgressClass, ProgressParams, ProgressStyle};
+
+mod radio;
+pub use radio::{Radio, RadioParams};
 
 mod selected;
 pub use selected::{Selected, SelectedClass, SelectedParams, SelectedStyle};

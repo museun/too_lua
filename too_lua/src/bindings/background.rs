@@ -27,7 +27,7 @@ impl BindingView for Background {
     type Style = ();
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.foo::<BackgroundParams>() else {
+        let Some(params) = ctx.params::<BackgroundParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "background", "params");
         };
 

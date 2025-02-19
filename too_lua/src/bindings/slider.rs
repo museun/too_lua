@@ -80,7 +80,7 @@ impl BindingView for Slider {
     type Style = SliderStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.foo::<SliderParams>() else {
+        let Some(params) = ctx.params::<SliderParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "slider", "params");
         };
 

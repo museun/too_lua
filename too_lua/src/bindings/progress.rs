@@ -83,7 +83,7 @@ impl BindingView for Progress {
     type Style = ProgressStyle;
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.foo::<ProgressParams>() else {
+        let Some(params) = ctx.params::<ProgressParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "progress", "params");
         };
 

@@ -29,7 +29,7 @@ impl BindingView for Flex {
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         use too::{layout::Flex, views::Flexible};
 
-        let Some(params) = ctx.foo::<FlexParams>() else {
+        let Some(params) = ctx.params::<FlexParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "flex", "params");
         };
 
