@@ -12,7 +12,14 @@ fn start<R>(f: impl Future<Output = R> + Send + Sync + 'static) -> R {
 
 fn main() -> std::io::Result<()> {
     start(async move {
-        too_lua::Application::new("./too_lua/examples/hello.lua")
+        let puffin = tokio::task::spawn_blocking(move || {
+            let addr = format!("127.0.0.1:{}", puffin_http::DEFAULT_PORT);
+            let server = puffin_http::Server::new(&addr).unwrap();
+            profiling::puffin::set_scopes_on(true);
+            server
+        });
+
+        let app = too_lua::Application::new("./too_lua/examples/hello.lua")
             .reload_keybind('r')
             .with_bindings(Bindings::default_bindings())
             .config(too::RunConfig {
@@ -21,7 +28,9 @@ fn main() -> std::io::Result<()> {
                 ..too::RunConfig::default()
             })
             .watch_timeout(std::time::Duration::from_secs(1))
-            .run()
-            .await
+            .run();
+
+        let _ = futures_util::join!(puffin, app);
+        Ok(())
     })
 }

@@ -6,7 +6,7 @@ use std::{
 use mlua::{MaybeSend, UserData};
 use too::{
     backend::{Backend as _, EventReader, Keybind},
-    debug,
+    format_str,
     renderer::Surface,
     term::{Config as TermConfig, Term},
     view::{CroppedSurface, Debug, State},
@@ -88,7 +88,7 @@ where
     }
 
     fn run_inner(self) -> std::io::Result<()> {
-        let lua = init_lua(&self.bindings);
+        let lua = init_lua(&self.bindings).map_err(std::io::Error::other)?;
         if let Some(user_data) = self.user_data {
             lua.globals()
                 .set("__USER_STATE", user_data)
@@ -163,11 +163,14 @@ where
 
             if was_manually_reloaded || script.should_reload() {
                 Debug::clear();
+                profiling::scope!("reload script");
+
                 if let Err(err) = script.reload(&lua) {
                     errors.handle_lua_error("cannot load", err);
                     return Ok(true);
                 }
 
+                // this can be blocking for a very long time
                 if let Err(err) = script.update(&lua) {
                     errors.handle_lua_error("cannot evaluate", err);
                     return Ok(true);
@@ -196,7 +199,7 @@ where
                     &tree.map[tree.root],
                     tree.root,
                 );
-
+                profiling::scope!("evaluate tree");
                 mapping.evaluate(ui, ctx);
             });
 
@@ -212,53 +215,50 @@ where
     }
 }
 
-fn init_lua(bindings: &Bindings) -> mlua::Lua {
+pub(crate) fn init_lua(bindings: &Bindings) -> mlua::Result<mlua::Lua> {
     let lua = mlua::Lua::new();
-    lua.set_app_data(Tree::new(&lua).unwrap());
+    lua.set_app_data(Tree::new(&lua)?);
     lua.set_app_data(RunningTasks::default());
 
     let globals = lua.globals();
 
-    let lazy = lua
-        .create_function(|lua, data: mlua::Table| {
-            let lazy = data.get::<mlua::Function>(1)?;
-            lua.app_data_mut::<Tree>().unwrap().add_lazy(lazy);
-            Ok(())
-        })
-        .unwrap();
-    globals.set("lazy", lazy).unwrap();
+    globals.set("lazy", lua.create_function(lazy)?)?;
+    globals.set("debug", mlua::Function::wrap(debug))?;
+    globals.set("rt", lua.create_proxy::<Runtime>()?)?;
 
-    let debug = mlua::Function::wrap(|data: String| {
-        debug(data);
-        Ok(())
-    });
-    globals.set("debug", debug).unwrap();
-
-    let require = globals.get::<mlua::Function>("require").unwrap();
-
-    let loaded = lua.create_table().unwrap();
-    globals.set("__TOO_LOADED", loaded).unwrap();
-
-    let require = lua
-        .create_function(move |lua, name: mlua::String| {
-            lua.globals()
-                .get::<mlua::Table>("__TOO_LOADED")?
-                .set(&name, true)?;
-            require.call::<mlua::Value>(name)
-        })
-        .unwrap();
-
-    globals.set("require", require).unwrap();
-
-    globals
-        .set("rt", lua.create_proxy::<Runtime>().unwrap())
-        .unwrap();
+    hook_require(&lua)?;
 
     for proxy in &bindings.proxies {
-        (proxy.register)(&globals, &lua).unwrap();
+        (proxy.register)(&globals, &lua)?;
     }
 
-    lua
+    Ok(lua)
+}
+
+fn debug(data: mlua::Value) -> mlua::Result<()> {
+    too::debug(format_str!("{data:?}"));
+    Ok(())
+}
+
+fn lazy(lua: &mlua::Lua, table: mlua::Table) -> mlua::Result<()> {
+    let lazy = table.get::<mlua::Function>(1)?;
+    lua.app_data_mut::<Tree>().unwrap().add_lazy(lazy);
+    Ok(())
+}
+
+fn hook_require(lua: &mlua::Lua) -> mlua::Result<()> {
+    let globals = lua.globals();
+
+    let require = globals.get::<mlua::Function>("require")?;
+    let loaded = lua.create_table()?;
+    globals.set("__TOO_LOADED", loaded)?;
+    let require = lua.create_function(move |lua, name: mlua::String| {
+        lua.globals()
+            .get::<mlua::Table>("__TOO_LOADED")?
+            .set(&name, true)?;
+        require.call::<mlua::Value>(name)
+    })?;
+    globals.set("require", require)
 }
 
 fn run_loop<E>(target: f32, mut frame: impl FnMut(u64, f32) -> Result<bool, E>) -> Result<(), E> {
@@ -271,6 +271,8 @@ fn run_loop<E>(target: f32, mut frame: impl FnMut(u64, f32) -> Result<bool, E>) 
     let mut next = prev;
 
     loop {
+        profiling::finish_frame!();
+
         let now = Instant::now();
         let dt = (now - prev).as_secs_f32();
         prev = now;

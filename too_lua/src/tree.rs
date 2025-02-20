@@ -1,16 +1,21 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 use mlua::{FromLua, UserData};
-use slotmap::{Key, SecondaryMap, SlotMap};
 use too::helpers::hash_fnv_1a;
 
-slotmap::new_key_type! {
-    pub struct LuaId;
+#[derive(Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+pub struct LuaId(usize);
+
+impl std::fmt::Debug for LuaId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
 }
 
 #[derive(Debug)]
 pub struct Node {
     pub(crate) name: u64,
+    #[allow(dead_code)]
     pub(crate) parent: Option<LuaId>,
     pub(crate) children: Vec<LuaId>,
     pub(crate) data: mlua::Value,
@@ -27,30 +32,49 @@ impl Node {
     }
 }
 
+impl std::ops::Index<LuaId> for Vec<Node> {
+    type Output = Node;
+    fn index(&self, LuaId(index): LuaId) -> &Self::Output {
+        &self[index]
+    }
+}
+
+impl std::ops::IndexMut<LuaId> for Vec<Node> {
+    fn index_mut(&mut self, LuaId(index): LuaId) -> &mut Self::Output {
+        &mut self[index]
+    }
+}
+
+#[derive(Debug)]
 pub struct Tree {
     pub(crate) root: LuaId,
-    pub(crate) map: SlotMap<LuaId, Node>,
-    pub(crate) names: SecondaryMap<LuaId, mlua::String>,
-    pub(crate) lazies: SecondaryMap<LuaId, mlua::Function>,
+    pub(crate) map: Vec<Node>,
+    pub(crate) names: HashMap<LuaId, mlua::String>,
+    pub(crate) lazies: HashMap<LuaId, mlua::Function>,
 
     stack: Vec<LuaId>,
     proxy: mlua::Table,
 }
 
 impl Tree {
+    #[profiling::function]
     pub fn new(lua: &mlua::Lua) -> mlua::Result<Self> {
+        // TODO cache these
         let mt = lua.create_table()?;
         mt.set("__call", Self::evaluate(lua)?)?;
 
         let table = lua.create_table()?;
         table.set_metatable(Some(mt));
 
-        let mut map = SlotMap::with_key();
+        let mut map = vec![];
 
         let root_name = lua.create_string("__root__")?;
-        let root = map.insert(Node::new(root_name.clone(), None));
+        // TODO end cache those
 
-        let mut names = SecondaryMap::new();
+        let root = LuaId(map.len());
+        map.push(Node::new(root_name.clone(), None));
+
+        let mut names = HashMap::new();
         names.insert(root, root_name);
 
         Ok(Self {
@@ -58,19 +82,32 @@ impl Tree {
 
             map,
             names,
-            lazies: SecondaryMap::new(),
+            lazies: HashMap::new(),
 
             stack: vec![root],
             proxy: table,
         })
     }
+
+    pub fn reset(&mut self) {
+        self.map.clear();
+        self.lazies.clear();
+        self.names.clear();
+        self.stack.clear();
+        self.stack.push(self.root);
+    }
+
+    fn current_id(this: &Tree) -> LuaId {
+        LuaId(this.map.len())
+    }
 }
 
 impl Tree {
+    #[profiling::function]
     pub(super) fn evaluate_lazies(&mut self) -> bool {
         let mut seen = false;
 
-        for (k, v) in &self.lazies {
+        for (&k, v) in &self.lazies {
             match &mut self.map[k].data {
                 mlua::Value::Table(table) => match table.get::<mlua::String>("text") {
                     Ok(text) => {
@@ -165,12 +202,10 @@ impl Tree {
 
     fn proxy(&mut self, name: mlua::String) -> mlua::Result<mlua::Value> {
         let pid = self.stack.last().copied();
-        let id = self.map.insert(Node::new(name.clone(), pid));
 
+        let id = Self::current_id(self);
+        self.map.push(Node::new(name.clone(), pid));
         self.names.insert(id, name);
-        if self.root.is_null() {
-            self.root = id
-        }
 
         if let Some(parent) = pid {
             self.map[parent].children.push(id);
@@ -254,43 +289,6 @@ impl Tree {
     }
 }
 
-impl std::fmt::Debug for Tree {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        struct DebugSlotMap<'a>(
-            &'a SlotMap<LuaId, Node>,
-            &'a SecondaryMap<LuaId, mlua::String>,
-        );
-
-        impl std::fmt::Debug for DebugSlotMap<'_> {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                struct Resolved<'a>(&'a Node, &'a str);
-                impl std::fmt::Debug for Resolved<'_> {
-                    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                        f.debug_struct("Node")
-                            .field("name", &self.1)
-                            .field("parent", &self.0.parent.map(|c| c.data()))
-                            .field("children", &self.0.children)
-                            .field("data", &self.0.data)
-                            .finish()
-                    }
-                }
-
-                let mut map = f.debug_map();
-                for (k, v) in self.0 {
-                    map.entry(&k.data(), &Resolved(v, &self.1[k].to_string_lossy()));
-                }
-                map.finish()
-            }
-        }
-
-        f.debug_struct("Tree")
-            .field("map", &DebugSlotMap(&self.map, &self.names))
-            .field("stack", &self.stack)
-            .field("root", &self.root.data())
-            .finish()
-    }
-}
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub(crate) struct UiBuilder;
 
@@ -332,7 +330,7 @@ impl DebugNode {
             }
             let node = DebugNode {
                 id,
-                name: tree.names[id].to_string_lossy(),
+                name: tree.names[&id].to_string_lossy(),
                 data: node.data.clone(),
                 children,
             };
@@ -347,7 +345,7 @@ impl DebugNode {
 
         Self {
             id: tree.root,
-            name: tree.names[tree.root].to_string_lossy(),
+            name: tree.names[&tree.root].to_string_lossy(),
             data: node.data.clone(),
             children,
         }
@@ -363,7 +361,7 @@ impl DebugNode {
                     out,
                     "{prefix}{upper}{name}({id:?}): {data:?}",
                     name = node.name,
-                    id = node.id.data(),
+                    id = node.id,
                     data = node.data
                 );
 
@@ -380,7 +378,7 @@ impl DebugNode {
         _ = writeln!(
             out,
             "root({id:?}): {data:?}",
-            id = self.id.data(),
+            id = self.id,
             data = self.data
         );
         print(&self.children, "", out);

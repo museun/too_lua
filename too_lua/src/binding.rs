@@ -80,11 +80,8 @@ macro_rules! register_enum {
         impl mlua::UserData for $ident {
             fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
                 use anno_lua::AnnoEnum as _;
-                // BUG if we aren't using serde for this type
-                // then we should use 'v' for the return type
-                // but with serde we should we use the 'k'
-                for (k, _v) in Self::variants() {
-                    fields.add_field_function_get(k, |_lua, _this| Ok(*k));
+                for (k, v) in Self::variants() {
+                    fields.add_field_function_get(k, |_lua, _this| Ok(*v));
                 }
             }
         }

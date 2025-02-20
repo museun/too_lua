@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use slotmap::Key;
 use too::{
     format_str,
     helpers::hash_fnv_1a,
@@ -55,8 +54,8 @@ impl Mapping {
         let Some(func) = self.map.get(name) else {
             ui.label(format_str!(
                 "cannot find: {name}/{id:?}",
-                name = &ctx.tree.names[ctx.id].to_string_lossy(),
-                id = ctx.id.data()
+                name = &ctx.tree.names[&ctx.id].to_string_lossy(),
+                id = ctx.id
             ));
             return;
         };
@@ -67,20 +66,14 @@ impl Mapping {
 
 impl Mapping {
     pub fn report_missing(ui: &Ui, id: LuaId, hint: &str) {
-        let view = too::views::label(format_str!(
-            "({:>3?}) {hint}: missing",
-            id.data().as_ffi() & 0xffff_ffff
-        ))
-        .class(too::views::LabelStyle::danger);
+        let view = too::views::label(format_str!("({id:>3?}) {hint}: missing",))
+            .class(too::views::LabelStyle::danger);
         ui.show(view);
     }
 
     pub fn report_missing_data(ui: &Ui, id: LuaId, hint: &str, data: &str) {
-        let view = too::views::label(format_str!(
-            "({:>3?}) {hint}: {data} missing",
-            id.data().as_ffi() & 0xffff_ffff
-        ))
-        .class(too::views::LabelStyle::danger);
+        let view = too::views::label(format_str!("({id:>3?}) {hint}: {data} missing",))
+            .class(too::views::LabelStyle::danger);
         ui.show(view);
     }
 }

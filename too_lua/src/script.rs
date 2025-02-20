@@ -42,12 +42,14 @@ impl Script {
         })
     }
 
+    #[profiling::function]
     pub fn update(&self, lua: &mlua::Lua) -> mlua::Result<()> {
-        lua.set_app_data(Tree::new(lua).unwrap());
+        lua.set_app_data(Tree::new(lua)?);
         let data = lua.globals().get::<AnyUserData>("__USER_STATE").ok();
         self.update.call::<()>((UiBuilder, data))
     }
 
+    #[profiling::function]
     pub fn reload_source(&mut self, source: &str, lua: &mlua::Lua) -> mlua::Result<()> {
         Self::reset_loaded(lua);
         lua.app_data_mut::<RunningTasks>().unwrap().stop_all();
@@ -60,7 +62,7 @@ impl Script {
         self.reload_source(&data, lua)
     }
 
-    pub fn should_reload(&mut self) -> bool {
+    pub fn should_reload(&self) -> bool {
         self.events.try_recv().is_ok()
     }
 
