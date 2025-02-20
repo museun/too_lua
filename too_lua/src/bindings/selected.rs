@@ -1,22 +1,22 @@
 use anno_lua::Anno;
-use mlua::{AnyUserData, FromLua, LuaSerdeExt as _};
+use mlua::{AnyUserData, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{merge, Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View};
+use crate::{
+    helper::get_table, merge, Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View,
+};
 
 use super::Color;
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Selected", self)]
 pub enum SelectedClass {
     /// The default style
     #[anno(name = "default")]
-    #[serde(rename = "default")]
     Default,
 
     /// This element reacts to hovers
     #[anno(name = "hovered")]
-    #[serde(rename = "hovered")]
     Hovered,
 }
 
@@ -39,7 +39,7 @@ impl TranslateClass for SelectedClass {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct SelectedStyle {
     /// The background color
@@ -61,6 +61,20 @@ pub struct SelectedStyle {
     /// The background color, when hovered
     #[anno(lua_type = "Color?")]
     pub hovered_background: Option<Color>,
+}
+
+impl FromLua for SelectedStyle {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                background: table.get("background")?,
+                text_color: table.get("text_color")?,
+                selected_background: table.get("selected_background")?,
+                hovered_text: table.get("hovered_text")?,
+                hovered_background: table.get("hovered_background")?,
+            })
+        })
+    }
 }
 
 impl MergeStyle for SelectedStyle {
@@ -96,19 +110,14 @@ pub struct SelectedParams {
 }
 
 impl FromLua for SelectedParams {
-    fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
-        let mlua::Value::Table(table) = value else {
-            return Err(mlua::Error::runtime(format!(
-                "expected SelectedParams, got: {}",
-                value.type_name()
-            )));
-        };
-
-        Ok(Self {
-            style: lua.from_value(table.get("style")?)?,
-            class: lua.from_value(table.get("class")?)?,
-            text: table.get("text")?,
-            value: table.get("value")?,
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                style: table.get("style")?,
+                class: table.get("class")?,
+                text: table.get("text")?,
+                value: table.get("value")?,
+            })
         })
     }
 }

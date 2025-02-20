@@ -1,10 +1,11 @@
 use anno_lua::Anno;
+use mlua::FromLua;
 use too::view::Ui;
 
 use super::{Axis, CrossAlign, Justify};
-use crate::{Context, Mapping};
+use crate::{helper::get_table, Context, Mapping};
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, Default, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno, Default)]
 #[anno(exact)]
 pub struct ListParams {
     /// Axis for the list
@@ -28,8 +29,22 @@ pub struct ListParams {
     pub scrollable: Option<bool>,
 }
 
+impl FromLua for ListParams {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                axis: table.get("axis")?,
+                justify: table.get("justify")?,
+                cross_align: table.get("cross_align")?,
+                gap: table.get("gap")?,
+                scrollable: table.get("scrollable")?,
+            })
+        })
+    }
+}
+
 pub fn list(mapping: &Mapping, ui: &Ui, ctx: Context, axis: Axis) {
-    let params = ctx.params_de::<ListParams>().unwrap_or_default();
+    let params = ctx.params::<ListParams>().unwrap_or_default();
 
     let list = too::views::list()
         .axis(params.axis.unwrap_or(axis).into())

@@ -1,38 +1,30 @@
 use anno_lua::Anno;
+use mlua::FromLua;
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{
-    binding::View,
-    bindings::{Color, Either},
-    Context, Mapping, TranslateClass,
-};
+use crate::{binding::View, bindings::Color, helper::get_table, Context, Mapping, TranslateClass};
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Label", self)]
 pub enum LabelClass {
     /// The default style
     #[anno(name = "default")]
-    #[serde(rename = "default")]
     Default,
 
     /// Denotes this label is for information
     #[anno(name = "info")]
-    #[serde(rename = "info")]
     Info,
 
     /// Denotes this label is for warning
     #[anno(name = "warning")]
-    #[serde(rename = "warning")]
     Warning,
 
     /// Denotes this label is for success
     #[anno(name = "success")]
-    #[serde(rename = "success")]
     Success,
 
     /// Denotes this label is for danger
     #[anno(name = "danger")]
-    #[serde(rename = "danger")]
     Danger,
 }
 
@@ -58,7 +50,7 @@ impl TranslateClass for LabelClass {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct LabelStyle {
     /// The foreground text color
@@ -90,7 +82,23 @@ pub struct LabelStyle {
     pub strikeout: Option<bool>,
 }
 
-#[derive(Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+impl FromLua for LabelStyle {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                foreground: table.get("foreground")?,
+                italic: table.get("italic")?,
+                bold: table.get("bold")?,
+                underline: table.get("underline")?,
+                faint: table.get("faint")?,
+                blink: table.get("blink")?,
+                strikeout: table.get("strikeout")?,
+            })
+        })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct LabelParams {
     /// The style of the label
@@ -104,6 +112,18 @@ pub struct LabelParams {
     /// The text of the label
     #[anno(lua_type = "string")]
     pub text: String,
+}
+
+impl FromLua for LabelParams {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                style: table.get("style")?,
+                class: table.get("class")?,
+                text: table.get("text")?,
+            })
+        })
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -132,16 +152,16 @@ impl View for Label {
         type Apply = fn(Label) -> Label;
         type Class = fn(&Palette, StyleOptions) -> LabelStyle;
 
-        let Some(params) = ctx.params_de::<Either<String, LabelParams>>() else {
+        let Some(params) = ctx.params::<mlua::Either<String, LabelParams>>() else {
             return Mapping::report_missing_data(ui, ctx.id, "label", "params");
         };
 
         let params = match params {
-            Either::Left(left) => {
+            mlua::Either::Left(left) => {
                 ui.show(label(left));
                 return;
             }
-            Either::Right(params) => params,
+            mlua::Either::Right(params) => params,
         };
 
         let mut label = label(params.text);

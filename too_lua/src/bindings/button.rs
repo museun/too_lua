@@ -1,36 +1,33 @@
 use anno_lua::Anno;
-use mlua::{FromLua, LuaSerdeExt};
+use mlua::FromLua;
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{binding::View, merge, Context, Mapping, MergeStyle, Params, TranslateClass};
+use crate::{
+    binding::View, helper::get_table, merge, Context, Mapping, MergeStyle, Params, TranslateClass,
+};
 
 use super::Color;
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Button", self)]
 pub enum ButtonClass {
     #[anno(name = "default")]
-    #[serde(rename = "default")]
     Default,
 
     /// Denotes this button is for success
     #[anno(name = "success")]
-    #[serde(rename = "success")]
     Success,
 
     /// Denotes this button is for information
     #[anno(name = "info")]
-    #[serde(rename = "info")]
     Info,
 
     /// Denotes this button is for warning
     #[anno(name = "warning")]
-    #[serde(rename = "warning")]
     Warning,
 
     /// Denotes this button is for danger
     #[anno(name = "danger")]
-    #[serde(rename = "danger")]
     Danger,
 }
 
@@ -56,7 +53,7 @@ impl TranslateClass for ButtonClass {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct ButtonStyle {
     /// The button text color
@@ -68,9 +65,19 @@ pub struct ButtonStyle {
     pub background: Option<Color>,
 }
 
+impl FromLua for ButtonStyle {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                text_color: table.get("text_color")?,
+                background: table.get("background")?,
+            })
+        })
+    }
+}
+
 impl MergeStyle for ButtonStyle {
     type Style = too::views::ButtonStyle;
-
     fn merge_style(&self, style: &mut Self::Style) {
         merge(&mut style.text_color, &self.text_color);
         merge(&mut style.background, &self.background);
@@ -98,19 +105,14 @@ pub struct ButtonParams {
 }
 
 impl FromLua for ButtonParams {
-    fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
-        let mlua::Value::Table(table) = value else {
-            return Err(mlua::Error::runtime(format!(
-                "expected ButtonParams, got: {}",
-                value.type_name()
-            )));
-        };
-
-        Ok(Self {
-            style: lua.from_value(table.get("style")?)?,
-            class: lua.from_value(table.get("class")?)?,
-            text: table.get("text")?,
-            handler: table.get("handler")?,
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                style: table.get("style")?,
+                class: table.get("class")?,
+                text: table.get("text")?,
+                handler: table.get("handler")?,
+            })
         })
     }
 }

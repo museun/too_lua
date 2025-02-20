@@ -189,8 +189,7 @@ pub use color::Color;
 mod value;
 pub use value::Value;
 
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash, serde::Deserialize)]
-#[serde(untagged)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum Either<Left, Right> {
     Left(Left),
     Right(Right),

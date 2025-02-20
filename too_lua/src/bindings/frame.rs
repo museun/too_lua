@@ -1,14 +1,16 @@
 use anno_lua::Anno;
+use mlua::FromLua;
 use too::view::{Ui, ViewExt as _};
 
 use crate::{
     bindings::{Align, BorderKind},
+    helper::get_table,
     Context, Mapping, Params, Spec, View,
 };
 
 use super::{BorderClass, BorderStyle};
 
-#[derive(Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct FrameParams {
     /// The style of the border
@@ -30,6 +32,20 @@ pub struct FrameParams {
     /// A string to place in the title
     #[anno(lua_type = "string")]
     pub title: String,
+}
+
+impl FromLua for FrameParams {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                style: table.get("style")?,
+                class: table.get("class")?,
+                border: table.get("border")?,
+                align: table.get("align")?,
+                title: table.get("title")?,
+            })
+        })
+    }
 }
 
 impl Params<too::views::BorderStyle> for FrameParams {
@@ -62,7 +78,7 @@ impl View for Frame {
     }
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.params_de::<FrameParams>() else {
+        let Some(params) = ctx.params::<FrameParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "frame", "params");
         };
 

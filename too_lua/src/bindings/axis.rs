@@ -1,16 +1,14 @@
 use anno_lua::Anno;
 
-#[derive(Copy, Clone, Debug, Default, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Anno)]
 #[anno(self)]
 pub enum Axis {
     /// The vertical axis
     #[anno(name = "vertical")]
-    #[serde(rename = "vertical")]
     Vertical,
 
     /// The horizontal axis
     #[anno(name = "horizontal")]
-    #[serde(rename = "horizontal")]
     #[default]
     Horizontal,
 }

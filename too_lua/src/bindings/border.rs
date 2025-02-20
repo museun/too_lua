@@ -1,52 +1,46 @@
 use anno_lua::Anno;
+use mlua::FromLua;
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
-    binding::View, bindings::Color, merge, Context, Mapping, MergeStyle, Params, TranslateClass,
+    binding::View, bindings::Color, helper::get_table, merge, Context, Mapping, MergeStyle, Params,
+    TranslateClass,
 };
 
-#[derive(Copy, Clone, Debug, Default, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Anno)]
 #[anno(self)]
 pub enum BorderKind {
     /// No border
     #[anno(name = "empty")]
-    #[serde(rename = "empty")]
     Empty,
 
     /// A thin border
     #[anno(name = "thin")]
-    #[serde(rename = "thin")]
     Thin,
 
     /// A thin, but wide border
     #[anno(name = "thin_wide")]
-    #[serde(rename = "thin_wide")]
     ThinWide,
 
     /// A rounded border
     #[anno(name = "rounded")]
-    #[serde(rename = "rounded")]
     Rounded,
 
     /// A double-line border
     #[anno(name = "double")]
-    #[serde(rename = "double")]
     Double,
 
     /// A thick border
     #[anno(name = "thick")]
-    #[serde(rename = "thick")]
     #[default]
     Thick,
 
     /// A thick, but tall border
     #[anno(name = "thick_tall")]
-    #[serde(rename = "thick_tall")]
     ThickTall,
 
     /// A thick, but wide border
     #[anno(name = "thick_wide")]
-    #[serde(rename = "thick_wide")]
     ThickWide,
 }
 
@@ -69,17 +63,15 @@ register_enum! {
     BorderKind is "BorderKind"
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Border", self)]
 pub enum BorderClass {
     /// The default style
     #[anno(name = "default")]
-    #[serde(rename = "default")]
     Default,
 
     /// An interactive style
     #[anno(name = "interactive")]
-    #[serde(rename = "interactive")]
     Interactive,
 }
 
@@ -102,7 +94,7 @@ impl TranslateClass for BorderClass {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct BorderStyle {
     /// The frame title color
@@ -133,7 +125,20 @@ impl MergeStyle for BorderStyle {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+impl FromLua for BorderStyle {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                title: table.get("title")?,
+                border: table.get("border")?,
+                border_focused: table.get("border_focused")?,
+                border_hovered: table.get("border_hovered")?,
+            })
+        })
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct BorderParams {
     /// The style of the border
@@ -147,6 +152,18 @@ pub struct BorderParams {
     /// The border to use
     #[anno(lua_type = "BorderKind")]
     pub border: BorderKind,
+}
+
+impl FromLua for BorderParams {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                style: table.get("style")?,
+                class: table.get("class")?,
+                border: table.get("border")?,
+            })
+        })
+    }
 }
 
 impl Params<too::views::BorderStyle> for BorderParams {
@@ -179,7 +196,7 @@ impl View for Border {
     }
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.params_de::<BorderParams>() else {
+        let Some(params) = ctx.params::<BorderParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "border", "params");
         };
 

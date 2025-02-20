@@ -1,27 +1,26 @@
 use anno_lua::Anno;
-use mlua::{AnyUserData, FromLua, LuaSerdeExt};
+use mlua::{AnyUserData, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{binding::View, merge, Context, Mapping, MergeStyle, Params, TranslateClass};
+use crate::{
+    binding::View, helper::get_table, merge, Context, Mapping, MergeStyle, Params, TranslateClass,
+};
 
 use super::Color;
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Checkbox", self)]
 pub enum CheckboxClass {
     /// The default style
     #[anno(name = "default")]
-    #[serde(rename = "default")]
     Default,
 
     /// A markdown inspired style
     #[anno(name = "markdown")]
-    #[serde(rename = "markdown")]
     Markdown,
 
     /// An ascii checkbox style
     #[anno(name = "ascii")]
-    #[serde(rename = "ascii")]
     Ascii,
 }
 
@@ -45,7 +44,7 @@ impl TranslateClass for CheckboxClass {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct CheckboxStyle {
     /// The character to use when checked
@@ -63,6 +62,19 @@ pub struct CheckboxStyle {
     /// The color of the text, when hovered
     #[anno(lua_type = "Color?")]
     pub hovered_color: Option<Color>,
+}
+
+impl FromLua for CheckboxStyle {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                checked: table.get("checked")?,
+                unchecked: table.get("unchecked")?,
+                text_color: table.get("text_color")?,
+                hovered_color: table.get("hovered_color")?,
+            })
+        })
+    }
 }
 
 impl MergeStyle for CheckboxStyle {
@@ -96,19 +108,14 @@ pub struct CheckboxParams {
 }
 
 impl FromLua for CheckboxParams {
-    fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
-        let mlua::Value::Table(table) = value else {
-            return Err(mlua::Error::runtime(format!(
-                "expected CheckboxParams, got: {}",
-                value.type_name()
-            )));
-        };
-
-        Ok(Self {
-            style: lua.from_value(table.get("style")?)?,
-            class: table.get("class")?,
-            text: table.get("text")?,
-            value: table.get("value")?,
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                style: table.get("style")?,
+                class: table.get("class")?,
+                text: table.get("text")?,
+                value: table.get("value")?,
+            })
         })
     }
 }

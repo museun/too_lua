@@ -1,54 +1,46 @@
 use anno_lua::Anno;
+use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{Context, Mapping, None, Spec, View};
+use crate::{helper::get_table, Context, Mapping, None, Spec, View};
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Aligned", self)]
 pub enum AlignedKind {
     /// Align to the horizontal left and vertical top
     #[anno(name = "left_top")]
-    #[serde(rename = "left_top")]
     LeftTop,
 
     /// Align to the horizontal center and vertical top
     #[anno(name = "center_top")]
-    #[serde(rename = "center_top")]
     CenterTop,
 
     /// Align to the horizontal right and vertical top
     #[anno(name = "right_top")]
-    #[serde(rename = "right_top")]
     RightTop,
 
     /// Align to the horizontal left and vertical center
     #[anno(name = "left_center")]
-    #[serde(rename = "left_center")]
     LeftCenter,
 
     /// Align to the horizontal center and vertical center
     #[anno(name = "center")]
-    #[serde(rename = "center")]
     CenterCenter,
 
     /// Align to the horizontal right and vertical center
     #[anno(name = "right_center")]
-    #[serde(rename = "right_center")]
     RightCenter,
 
     /// Align to the horizontal left and vertical bottom
     #[anno(name = "left_bottom")]
-    #[serde(rename = "left_bottom")]
     LeftBottom,
 
     /// Align to the horizontal center and vertical bottom
     #[anno(name = "center_bottom")]
-    #[serde(rename = "center_bottom")]
     CenterBottom,
 
     /// Align to the horizontal right and vertical bottom
     #[anno(name = "right_bottom")]
-    #[serde(rename = "right_bottom")]
     RightBottom,
 }
 
@@ -72,13 +64,22 @@ impl From<AlignedKind> for too::layout::Align2 {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
-/// Parameter for `ui.aligned`
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct AlignedParams {
     /// Alignment for its children
     #[anno(lua_type = "Aligned")]
     pub align: AlignedKind,
+}
+
+impl FromLua for AlignedParams {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                align: table.get("align")?,
+            })
+        })
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -99,7 +100,7 @@ impl View for Aligned {
     }
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.params_de::<AlignedParams>() else {
+        let Some(params) = ctx.params::<AlignedParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "aligned", "params");
         };
         ui.aligned(params.align.into(), |ui| ctx.visit_children(mapping, ui));

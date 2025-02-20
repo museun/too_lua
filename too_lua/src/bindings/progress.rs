@@ -1,47 +1,42 @@
 use anno_lua::Anno;
-use mlua::{AnyUserData, FromLua, LuaSerdeExt as _};
+use mlua::{AnyUserData, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{merge, Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View};
+use crate::{
+    helper::get_table, merge, Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View,
+};
 
 use super::{Axis, Color};
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Progress", self)]
 pub enum ProgressClass {
     /// Default style
     #[anno(name = "default")]
-    #[serde(rename = "default")]
     Default,
 
     /// A medium filled style
     #[anno(name = "medium_filled")]
-    #[serde(rename = "medium_filled")]
     MediumFilled,
 
     /// A full filled style
     #[anno(name = "filled")]
-    #[serde(rename = "filled")]
     Filled,
 
     /// A thin style
     #[anno(name = "thin")]
-    #[serde(rename = "thin")]
     Thin,
 
     /// A thick style
     #[anno(name = "thick")]
-    #[serde(rename = "thick")]
     Thick,
 
     /// A thin, but dashed style
     #[anno(name = "thin_dashed")]
-    #[serde(rename = "thin_dashed")]
     ThinDashed,
 
     /// A thick, but dashed style
     #[anno(name = "thick_dashed")]
-    #[serde(rename = "thick_dashed")]
     ThickDashed,
 }
 
@@ -69,7 +64,7 @@ impl TranslateClass for ProgressClass {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct ProgressStyle {
     /// The unfilled color
@@ -95,6 +90,21 @@ pub struct ProgressStyle {
     /// The character to use for the filled portion
     #[anno(lua_type = "string?")]
     pub filled: Option<String>,
+}
+
+impl FromLua for ProgressStyle {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                unfilled_color: table.get("unfilled_color")?,
+                filled_color: table.get("filled_color")?,
+                unfilled_hovered: table.get("unfilled_hovered")?,
+                filled_hovered: table.get("filled_hovered")?,
+                unfilled: table.get("unfilled")?,
+                filled: table.get("filled")?,
+            })
+        })
+    }
 }
 
 impl MergeStyle for ProgressStyle {
@@ -131,19 +141,14 @@ pub struct ProgressParams {
 }
 
 impl FromLua for ProgressParams {
-    fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
-        let mlua::Value::Table(table) = value else {
-            return Err(mlua::Error::runtime(format!(
-                "expected ProgressParams, got: {}",
-                value.type_name()
-            )));
-        };
-
-        Ok(Self {
-            style: lua.from_value(table.get("style")?)?,
-            class: lua.from_value(table.get("class")?)?,
-            axis: lua.from_value(table.get("axis")?)?,
-            value: table.get("value")?,
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                style: table.get("style")?,
+                class: table.get("class")?,
+                axis: table.get("axis")?,
+                value: table.get("value")?,
+            })
         })
     }
 }

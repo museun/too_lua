@@ -1,42 +1,38 @@
 use anno_lua::Anno;
-use mlua::{AnyUserData, FromLua, LuaSerdeExt};
+use mlua::{AnyUserData, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{merge, Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View};
+use crate::{
+    helper::get_table, merge, Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View,
+};
 
 use super::{Axis, Color};
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Slider", self)]
 pub enum SliderClass {
     /// The default style
     #[anno(name = "default")]
-    #[serde(rename = "default")]
     Default,
 
     /// Small track and rounded knob
     #[anno(name = "small_rounded")]
-    #[serde(rename = "small_rounded")]
     SmallRounded,
 
     /// Small track and diamond knob
     #[anno(name = "small_diamond")]
-    #[serde(rename = "small_diamond")]
     SmallDiamond,
 
     /// Small track and square knob
     #[anno(name = "small_square")]
-    #[serde(rename = "small_square")]
     SmallSquare,
 
     /// Medium track and large knob
     #[anno(name = "large")]
-    #[serde(rename = "large")]
     Large,
 
     /// Large track and large knob
     #[anno(name = "large_filled")]
-    #[serde(rename = "large_filled")]
     LargeFilled,
 }
 
@@ -63,7 +59,7 @@ impl TranslateClass for SliderClass {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct SliderStyle {
     /// The color of the track
@@ -89,6 +85,21 @@ pub struct SliderStyle {
     /// The character to use for the track
     #[anno(lua_type = "string?")]
     pub track: Option<String>,
+}
+
+impl FromLua for SliderStyle {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                track_color: table.get("track_color")?,
+                knob_color: table.get("knob_color")?,
+                track_hovered: table.get("track_hovered")?,
+                knob_hovered: table.get("knob_hovered")?,
+                knob: table.get("knob")?,
+                track: table.get("track")?,
+            })
+        })
+    }
 }
 
 impl MergeStyle for SliderStyle {
@@ -125,19 +136,14 @@ pub struct SliderParams {
 }
 
 impl FromLua for SliderParams {
-    fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
-        let mlua::Value::Table(table) = value else {
-            return Err(mlua::Error::runtime(format!(
-                "expected SliderParams, got: {}",
-                value.type_name()
-            )));
-        };
-
-        Ok(Self {
-            style: lua.from_value(table.get("style")?)?,
-            class: lua.from_value(table.get("class")?)?,
-            axis: lua.from_value(table.get("axis")?)?,
-            value: table.get("value")?,
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                style: table.get("style")?,
+                class: table.get("class")?,
+                axis: table.get("axis")?,
+                value: table.get("value")?,
+            })
         })
     }
 }

@@ -1,15 +1,26 @@
 use anno_lua::Anno;
+use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{Context, Mapping, None, Spec, View};
+use crate::{helper::get_table, Context, Mapping, None, Spec, View};
 
 use super::Color;
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 pub struct BackgroundParams {
     /// The background color for the children
     #[anno(lua_type = "string")]
     pub background: Color,
+}
+
+impl FromLua for BackgroundParams {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                background: table.get("background")?,
+            })
+        })
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -30,34 +41,10 @@ impl View for Background {
     }
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.params_de::<BackgroundParams>() else {
+        let Some(params) = ctx.params::<BackgroundParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "background", "params");
         };
 
         ui.background(params.background, |ui| ctx.visit_children(mapping, ui));
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use mlua::LuaSerdeExt;
-
-    use super::*;
-    #[test]
-    fn asdf() {
-        let lua = mlua::Lua::new();
-
-        let v = lua
-            .load(
-                r##"
-        return {
-            background = "#e230aadd"
-        }
-        "##,
-            )
-            .eval::<mlua::Value>()
-            .unwrap();
-        let params: BackgroundParams = lua.from_value(v).unwrap();
-        eprintln!("{params:#?}")
     }
 }

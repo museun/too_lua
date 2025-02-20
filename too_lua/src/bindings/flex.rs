@@ -1,9 +1,10 @@
 use anno_lua::Anno;
+use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{Context, Mapping, None, View};
+use crate::{helper::get_table, Context, Mapping, None, View};
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct FlexParams {
     /// Tight constraint (ratio between 0.0 and 1.0)
@@ -13,6 +14,17 @@ pub struct FlexParams {
     /// Loose constraint (ratio between 0.0 and 1.0)
     #[anno(lua_type = "number?")]
     pub loose: Option<f32>,
+}
+
+impl FromLua for FlexParams {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                tight: table.get("tight")?,
+                loose: table.get("loose")?,
+            })
+        })
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -35,7 +47,7 @@ impl View for Flex {
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         use too::{layout::Flex, views::Flexible};
 
-        let Some(params) = ctx.params_de::<FlexParams>() else {
+        let Some(params) = ctx.params::<FlexParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "flex", "params");
         };
 

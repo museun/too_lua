@@ -1,11 +1,12 @@
 use anno_lua::Anno;
+use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{Context, Mapping, None, Spec, View};
+use crate::{helper::get_table, Context, Mapping, None, Spec, View};
 
 use super::Color;
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct FillParams {
     /// Use this color to fill the area
@@ -19,6 +20,18 @@ pub struct FillParams {
     /// Optional height to allocate
     #[anno(lua_type = "integer?")]
     pub height: Option<u16>,
+}
+
+impl FromLua for FillParams {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                background: table.get("background")?,
+                width: table.get("width")?,
+                height: table.get("height")?,
+            })
+        })
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -40,7 +53,7 @@ impl View for Fill {
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
         use too::views::Fill;
-        let Some(params) = ctx.params_de::<FillParams>() else {
+        let Some(params) = ctx.params::<FillParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "fill", "params");
         };
 

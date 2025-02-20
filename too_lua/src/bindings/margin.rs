@@ -1,9 +1,10 @@
 use anno_lua::Anno;
+use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{Context, Mapping, None, Spec, View};
+use crate::{helper::get_table, Context, Mapping, None, Spec, View};
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct MarginParams {
     /// Padding to the left of the view
@@ -35,6 +36,22 @@ pub struct MarginParams {
     pub all: Option<u16>,
 }
 
+impl FromLua for MarginParams {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                left: table.get("left")?,
+                right: table.get("right")?,
+                top: table.get("top")?,
+                bottom: table.get("bottom")?,
+                horizontal: table.get("horizontal")?,
+                vertical: table.get("vertical")?,
+                all: table.get("all")?,
+            })
+        })
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Margin;
 
@@ -52,7 +69,7 @@ impl View for Margin {
         }
     }
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.params_de::<MarginParams>() else {
+        let Some(params) = ctx.params::<MarginParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "margin", "params");
         };
 

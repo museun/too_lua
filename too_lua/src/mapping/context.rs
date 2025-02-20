@@ -1,5 +1,4 @@
-use mlua::{AnyUserData, FromLua, LuaSerdeExt, UserDataRef, UserDataRefMut};
-use serde::de::DeserializeOwned;
+use mlua::{AnyUserData, FromLua, UserDataRef, UserDataRefMut};
 use too::view::Ui;
 
 use crate::{bindings::Value, LuaId, Node, Tree};
@@ -47,10 +46,6 @@ impl<'a> Context<'a> {
 
     pub fn params<T: FromLua>(&self) -> Option<T> {
         T::from_lua(self.current.data.clone(), self.lua).ok()
-    }
-
-    pub fn params_de<T: DeserializeOwned>(&self) -> Option<T> {
-        self.lua.from_value(self.current.data.clone()).ok()
     }
 
     pub fn value_ref(&self, data: &AnyUserData) -> Option<UserDataRef<Value>> {

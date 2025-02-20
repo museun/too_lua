@@ -1,22 +1,19 @@
 use anno_lua::Anno;
 
-#[derive(Copy, Clone, Debug, Default, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Anno)]
 #[anno(self)]
 pub enum Align {
     /// Align to the start of the area
     #[anno(name = "min")]
-    #[serde(rename = "min")]
     #[default]
     Min,
 
     /// Align to the middle of the area
     #[anno(name = "middle")]
-    #[serde(rename = "middle")]
     Middle,
 
     /// Align to the end of the area
     #[anno(name = "max")]
-    #[serde(rename = "max")]
     Max,
 }
 

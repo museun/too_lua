@@ -1,37 +1,34 @@
 use anno_lua::Anno;
-use mlua::{AnyUserData, FromLua, LuaSerdeExt as _};
+use mlua::{AnyUserData, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{merge, Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View};
+use crate::{
+    helper::get_table, merge, Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View,
+};
 
 use super::{Axis, Color};
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Toggle", self)]
 pub enum ToggleSwitchClass {
     /// The default style
     #[anno(name = "default")]
-    #[serde(rename = "default")]
     Default,
 
     /// A large knob
     #[anno(name = "large")]
-    #[serde(rename = "large")]
     Large,
 
     /// A small rounded knob
     #[anno(name = "small_rounded")]
-    #[serde(rename = "small_rounded")]
     SmallRounded,
 
     /// A small diamond knob
     #[anno(name = "small_diamond")]
-    #[serde(rename = "small_diamond")]
     SmallDiamond,
 
     /// A small square knob
     #[anno(name = "small_square")]
-    #[serde(rename = "small_square")]
     SmallSquare,
 }
 
@@ -57,7 +54,7 @@ impl TranslateClass for ToggleSwitchClass {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct ToggleSwitchStyle {
     /// The character to use for the track
@@ -97,6 +94,24 @@ pub struct ToggleSwitchStyle {
     pub off_knob_hovered: Option<Color>,
 }
 
+impl FromLua for ToggleSwitchStyle {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                track: table.get("track")?,
+                track_color: table.get("track_color")?,
+                track_hovered: table.get("track_hovered")?,
+                on_knob: table.get("on_knob")?,
+                on_knob_color: table.get("on_knob_color")?,
+                off_knob: table.get("off_knob")?,
+                off_knob_color: table.get("off_knob_color")?,
+                on_knob_hovered: table.get("on_knob_hovered")?,
+                off_knob_hovered: table.get("off_knob_hovered")?,
+            })
+        })
+    }
+}
+
 impl MergeStyle for ToggleSwitchStyle {
     type Style = too::views::ToggleStyle;
 
@@ -134,19 +149,14 @@ pub struct ToggleSwitchParams {
 }
 
 impl FromLua for ToggleSwitchParams {
-    fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
-        let mlua::Value::Table(table) = value else {
-            return Err(mlua::Error::runtime(format!(
-                "expected ToggleSwitchParams, got: {}",
-                value.type_name()
-            )));
-        };
-
-        Ok(Self {
-            style: lua.from_value(table.get("style")?)?,
-            class: lua.from_value(table.get("class")?)?,
-            value: table.get("value")?,
-            axis: lua.from_value(table.get("axis")?)?,
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                style: table.get("style")?,
+                class: table.get("class")?,
+                value: table.get("value")?,
+                axis: table.get("axis")?,
+            })
         })
     }
 }

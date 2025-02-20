@@ -1,17 +1,16 @@
 use anno_lua::Anno;
-use mlua::{AnyUserData, FromLua, LuaSerdeExt as _};
+use mlua::{AnyUserData, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{Context, Mapping, Spec, TranslateClass, View};
+use crate::{helper::get_table, Context, Mapping, Spec, TranslateClass, View};
 
 use super::Color;
 
-#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Todo", self)]
 pub enum TodoClass {
     /// The default style
     #[anno(name = "default")]
-    #[serde(rename = "default")]
     Default,
 }
 
@@ -33,7 +32,7 @@ impl TranslateClass for TodoClass {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct TodoStyle {
     /// When selected, the text should be bold
@@ -73,6 +72,24 @@ pub struct TodoStyle {
     pub hovered_color: Option<Color>,
 }
 
+impl FromLua for TodoStyle {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                bold: table.get("bold")?,
+                faint: table.get("faint")?,
+                italic: table.get("italic")?,
+                underline: table.get("underline")?,
+                blink: table.get("blink")?,
+                reverse: table.get("reverse")?,
+                strikeout: table.get("strikeout")?,
+                text_color: table.get("text_color")?,
+                hovered_color: table.get("hovered_color")?,
+            })
+        })
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
 pub struct TodoParams {
@@ -94,19 +111,14 @@ pub struct TodoParams {
 }
 
 impl FromLua for TodoParams {
-    fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
-        let mlua::Value::Table(table) = value else {
-            return Err(mlua::Error::runtime(format!(
-                "expected TodoParams, got: {}",
-                value.type_name()
-            )));
-        };
-
-        Ok(Self {
-            style: lua.from_value(table.get("style")?)?,
-            class: lua.from_value(table.get("class")?)?,
-            text: table.get("text")?,
-            value: table.get("value")?,
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        get_table(value, |table| {
+            Ok(Self {
+                style: table.get("style")?,
+                class: table.get("class")?,
+                text: table.get("text")?,
+                value: table.get("value")?,
+            })
         })
     }
 }
