@@ -89,14 +89,6 @@ impl Tree {
         })
     }
 
-    pub fn reset(&mut self) {
-        self.map.clear();
-        self.lazies.clear();
-        self.names.clear();
-        self.stack.clear();
-        self.stack.push(self.root);
-    }
-
     fn current_id(this: &Tree) -> LuaId {
         LuaId(this.map.len())
     }
