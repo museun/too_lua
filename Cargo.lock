@@ -20,7 +20,7 @@ checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 [[package]]
 name = "anno_lua"
 version = "0.1.0"
-source = "git+https://github.com/museun/anno_lua?branch=dev#0afdafef42b18544578921f6431586cf00920132"
+source = "git+https://github.com/museun/anno_lua?branch=dev#69dc3fa8edb1a17dc9cd61ff71b56e28cc78e081"
 dependencies = [
  "anno_lua_derive",
  "anno_lua_impl",
@@ -29,7 +29,7 @@ dependencies = [
 [[package]]
 name = "anno_lua_derive"
 version = "0.1.0"
-source = "git+https://github.com/museun/anno_lua?branch=dev#0afdafef42b18544578921f6431586cf00920132"
+source = "git+https://github.com/museun/anno_lua?branch=dev#69dc3fa8edb1a17dc9cd61ff71b56e28cc78e081"
 dependencies = [
  "anno_lua_impl",
  "proc-macro2",
@@ -40,7 +40,7 @@ dependencies = [
 [[package]]
 name = "anno_lua_impl"
 version = "0.1.0"
-source = "git+https://github.com/museun/anno_lua?branch=dev#0afdafef42b18544578921f6431586cf00920132"
+source = "git+https://github.com/museun/anno_lua?branch=dev#69dc3fa8edb1a17dc9cd61ff71b56e28cc78e081"
 
 [[package]]
 name = "autocfg"
@@ -438,9 +438,9 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "serde"
-version = "1.0.217"
+version = "1.0.218"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02fc4265df13d6fa1d00ecff087228cc0a2b5f3c0e87e258d8b94a156e984c70"
+checksum = "e8dfc9d19bdbf6d17e22319da49161d5d0108e4188e8b680aef6299eed22df60"
 dependencies = [
  "serde_derive",
 ]
@@ -457,9 +457,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.217"
+version = "1.0.218"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a9bf7cf98d04a2b28aead066b7496853d4779c9cc183c440dbac457641e19a0"
+checksum = "f09503e191f4e797cb8aac08e9a4a4695c5edf6a2e70e376d961ddd5c969f82b"
 dependencies = [
  "proc-macro2",
  "quote",

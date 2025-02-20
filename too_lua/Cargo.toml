@@ -5,14 +5,16 @@ edition = "2021"
 
 [dependencies]
 too = { git = "https://github.com/museun/too", branch = "too_lua" }
+anno_lua = { git = "https://github.com/museun/anno_lua", version = "0.1.0", branch = "dev" }
 
 # NOTE the minimum supported lua is 5.3 (for integers)
 mlua = { version = "0.10.3", features = [ "lua54", "error-send", "send", "async", "serialize" ] }
+serde = { version = "1.0.217", features = [ "derive" ] }
+
 slotmap = "1.0.7"
+
 tokio = { version = "1.43.0", features = [ "rt" ] }
 tokio-stream = "0.1.17"
-anno_lua = { git = "https://github.com/museun/anno_lua", version = "0.1.0", branch = "dev" }
-serde = { version = "1.0.217", features = [ "derive" ] }
 
 [dev-dependencies]
 tokio = { version = "1.43.0", features = [ "rt-multi-thread" ] }

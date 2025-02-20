@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
-use crate::Bindings;
+use crate::{Arguments, Bindings};
 
 pub fn generate(bindings: &Bindings) -> String {
     use std::io::Write as _;
 
     let mut seen = HashSet::new();
-
     let mut out = Vec::new();
+
     _ = writeln!(
         &mut out,
         "---@alias Color string #RGB | #RGBA | #RRGGBB | #RRGGBBAA hex string"
@@ -39,9 +39,9 @@ pub fn generate(bindings: &Bindings) -> String {
         }
         _ = write!(&mut out, "---@field {name} fun(", name = spec.name);
         match spec.args {
-            crate::Arguments::Any => _ = write!(&mut out, "args: any"),
-            crate::Arguments::None => {}
-            crate::Arguments::Named(name) => _ = write!(&mut out, "args: {name}"),
+            Arguments::Any => _ = write!(&mut out, "args: any"),
+            Arguments::Named(name) => _ = write!(&mut out, "args: {name}"),
+            Arguments::None => {}
         }
         _ = writeln!(&mut out, "): nil")
     }
