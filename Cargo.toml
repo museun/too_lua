@@ -5,6 +5,8 @@ members = [
 ]
 resolver = "2"
 
+package.edition = "2024"
+
 # [profile.dev.package.mlua]
 # opt-level = 3
 

@@ -7,9 +7,9 @@ use crate::{Context, Mapping};
 #[macro_export]
 macro_rules! view_spec {
     (
-        $(#[doc = $doc:expr])*
+        $(#[doc = $doc:expr_2021])*
         $ty:ty {
-            name: $name:expr
+            name: $name:expr_2021
         }
     ) => {
         $crate::binding::Spec {
@@ -22,9 +22,9 @@ macro_rules! view_spec {
     };
 
     (
-        $(#[doc = $doc:expr])*
+        $(#[doc = $doc:expr_2021])*
         $ty:ty {
-            name: $name:expr,
+            name: $name:expr_2021,
             params: any
         }
     ) => {
@@ -38,9 +38,9 @@ macro_rules! view_spec {
     };
 
     (
-        $(#[doc = $doc:expr])*
+        $(#[doc = $doc:expr_2021])*
         $ty:ty {
-            name: $name:expr,
+            name: $name:expr_2021,
             params: $($params:tt $(|$tail:tt)*)?
         }
     ) => {
@@ -58,7 +58,7 @@ macro_rules! view_spec {
 
 #[macro_export]
 macro_rules! register_enum {
-    ($ident:ident is $name:expr) => {
+    ($ident:ident is $name:expr_2021) => {
         impl $crate::binding::Register for $ident {
             const NAME: &'static str = $name;
         }
