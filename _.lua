@@ -1,475 +1,599 @@
 ---@alias Color string #RGB | #RGBA | #RRGGBB | #RRGGBBAA hex string
 
----@alias lazy_args {}
----@type fun(func: table<fun(): string>): lazy_args lazily generate a string
----@diagnostic disable-next-line: lowercase-global
-lazy = function(args) return {} end
-
----@class rt
-rt = {
-    --- sleep for `millis`
-    ---@async
-    ---@params millis: integer
-    ---@return nil
-    sleep_ms = function(millis) end,
-    --- spawns an async tasks, returning its id
-    ---@params task: fun():nil | thread
-    ---@return integer
-    spawn = function(task) end,
-    --- attempts to stop a running task
-    ---@params id: integer?
-    ---@return boolean
-    stop = function(id) end,
-}
-
----@class (exact) Constraint
----@field exact_size fun(w: integer, h: integer): Constraint The view has an exact size
----@field exact_height fun(h: integer): Constraint The view has an exact height
----@field exact_width fun(w: integer): Constraint The view has an exact width
----@field max_size fun(w: integer, h: integer): Constraint The view has a max size
----@field max_height fun(h: integer): Constraint The view has a max height
----@field max_width fun(w: integer): Constraint The view has a max width
----@field min_size fun(w: integer, h: integer): Constraint The view has a min size
----@field min_width fun(w: integer): Constraint The view has a min width
----@field min_height fun(h: integer): Constraint The view has a min height
-Constraint = {}
-
+--- A shared value between lua and rust
 ---@class (exact) Value
----@field new fun(value: integer|number|boolean|string): Value create a new value
----@field persist fun(id: string, value: integer|number|boolean|string): Value create a new value, persisted and accessible via `id`
----@field destroy fun(id: string): boolean destroys a persisted value `id`, if it exists
----@field value integer|number|boolean|string get the inner value
-Value = {}
-
----@enum Align
-Align = {
-    ---  Align to the start of the area
-    min    = 0,
-    ---  Align to the middle of the area
-    middle = 1,
-    ---  Align to the end of the area
-    max    = 2,
-}
+--- create a new value
+---@field new fun(value: integer|number|boolean|string): Value
+--- create a new value, persisted and accessible via `id`
+---@field persist fun(id: string, value: integer|number|boolean|string): Value
+--- destroys a persisted value `id`, if it exists
+---@field destroy fun(id: string): boolean
+--- get the inner value
+---@field value integer|number|boolean|string
+Value = { }
 
 ---@enum Aligned
 Aligned = {
-    ---  Align to the horizontal left and vertical top
-    left_top      = 0,
-    ---  Align to the horizontal center and vertical top
-    center_top    = 1,
-    ---  Align to the horizontal right and vertical top
-    right_top     = 2,
-    ---  Align to the horizontal left and vertical center
-    left_center   = 3,
-    ---  Align to the horizontal center and vertical center
-    center        = 4,
-    ---  Align to the horizontal right and vertical center
-    right_center  = 5,
-    ---  Align to the horizontal left and vertical bottom
-    left_bottom   = 6,
-    ---  Align to the horizontal center and vertical bottom
-    center_bottom = 7,
-    ---  Align to the horizontal right and vertical bottom
-    right_bottom  = 8,
+    --- Align to the horizontal left and vertical top
+    left_top = Aligned,
+    --- Align to the horizontal center and vertical top
+    center_top = Aligned,
+    --- Align to the horizontal right and vertical top
+    right_top = Aligned,
+    --- Align to the horizontal left and vertical center
+    left_center = Aligned,
+    --- Align to the horizontal center and vertical center
+    center = Aligned,
+    --- Align to the horizontal right and vertical center
+    right_center = Aligned,
+    --- Align to the horizontal left and vertical bottom
+    left_bottom = Aligned,
+    --- Align to the horizontal center and vertical bottom
+    center_bottom = Aligned,
+    --- Align to the horizontal right and vertical bottom
+    right_bottom = Aligned,
 }
 
 ---@enum Axis
 Axis = {
-    ---  The vertical axis
-    vertical   = 0,
-    ---  The horizontal axis
-    horizontal = 1,
+    --- The vertical axis
+    vertical = Axis,
+    --- The horizontal axis
+    horizontal = Axis,
 }
 
----@enum Border
-Border = {
-    ---  The default style
-    default     = 0,
-    ---  An interactive style
-    interactive = 1,
-}
-
----@enum BorderKind
-BorderKind = {
-    ---  No border
-    empty      = 0,
-    ---  A thin border
-    thin       = 1,
-    ---  A thin, but wide border
-    thin_wide  = 2,
-    ---  A rounded border
-    rounded    = 3,
-    ---  A double-line border
-    double     = 4,
-    ---  A thick border
-    thick      = 5,
-    ---  A thick, but tall border
-    thick_tall = 6,
-    ---  A thick, but wide border
-    thick_wide = 7,
-}
-
----@enum Button
-Button = {
-    ---  The default style
-    default = 0,
-    ---  Denotes this button is for success
-    success = 1,
-    ---  Denotes this button is for information
-    info    = 2,
-    ---  Denotes this button is for warning
-    warning = 3,
-    ---  Denotes this button is for danger
-    danger  = 4,
-}
-
----@enum Checkbox
-Checkbox = {
-    ---  The default style
-    default  = 0,
-    ---  A markdown inspired style
-    markdown = 1,
-    ---  An ascii checkbox style
-    ascii    = 2,
+---@enum Align
+Align = {
+    --- Align to the start of the area
+    min = Align,
+    --- Align to the middle of the area
+    middle = Align,
+    --- Align to the end of the area
+    max = Align,
 }
 
 ---@enum CrossAlign
 CrossAlign = {
-    ---  Alignment begins at the 'start' of the area
-    min     = 0,
-    ---  Alignment begins at the 'end' of the area
-    max     = 1,
-    ---  Alignment is in the middle, extra space is applied before and after
-    center  = 2,
-    ---  The elements stretch to fill the area
-    stretch = 3,
-    ---  The elements fill the entire area
-    fill    = 4,
+    --- Alignment begins at the 'start' of the area
+    min = CrossAlign,
+    --- Alignment begins at the 'end' of the area
+    max = CrossAlign,
+    --- Alignment is in the middle, extra space is applied before and after
+    center = CrossAlign,
+    --- The elements stretch to fill the area
+    stretch = CrossAlign,
+    --- The elements fill the entire area
+    fill = CrossAlign,
 }
 
 ---@enum Justify
 Justify = {
-    ---  The extra space is applied to the end
-    min           = 0,
-    ---  The extra space is applied to the start
-    max           = 1,
-    ---  The extra space is applied to the start and end
-    center        = 2,
-    ---  Place the space between the elements
-    space_between = 3,
-    ---  Place the space around the elements
-    space_around  = 4,
-    ---  Evenly space the elements
-    space_evenly  = 5,
+    --- The extra space is applied to the end
+    min = Justify,
+    --- The extra space is applied to the start
+    max = Justify,
+    --- The extra space is applied to the start and end
+    center = Justify,
+    --- Place the space between the elements
+    space_between = Justify,
+    --- Place the space around the elements
+    space_around = Justify,
+    --- Evenly space the elements
+    space_evenly = Justify,
 }
+
+---@enum Border
+Border = {
+    --- The default style
+    default = Border,
+    --- An interactive style
+    interactive = Border,
+}
+
+---@enum BorderKind
+BorderKind = {
+    --- No border
+    empty = BorderKind,
+    --- A thin border
+    thin = BorderKind,
+    --- A thin, but wide border
+    thin_wide = BorderKind,
+    --- A rounded border
+    rounded = BorderKind,
+    --- A double-line border
+    double = BorderKind,
+    --- A thick border
+    thick = BorderKind,
+    --- A thick, but tall border
+    thick_tall = BorderKind,
+    --- A thick, but wide border
+    thick_wide = BorderKind,
+}
+
+---@enum Button
+Button = {
+    default = Button,
+    --- Denotes this button is for success
+    success = Button,
+    --- Denotes this button is for information
+    info = Button,
+    --- Denotes this button is for warning
+    warning = Button,
+    --- Denotes this button is for danger
+    danger = Button,
+}
+
+---@enum Checkbox
+Checkbox = {
+    --- The default style
+    default = Checkbox,
+    --- A markdown inspired style
+    markdown = Checkbox,
+    --- An ascii checkbox style
+    ascii = Checkbox,
+}
+
+--- A constraint
+---@class (exact) Constraint
+--- The view has an exact size
+---@field exact_size fun(w: integer, h: integer): Constraint
+--- The view has an exact height
+---@field exact_height fun(h: integer): Constraint
+--- The view has an exact width
+---@field exact_width fun(w: integer): Constraint
+--- The view has a max size
+---@field max_size fun(w: integer, h: integer): Constraint
+--- The view has a max height
+---@field max_height fun(h: integer): Constraint
+--- The view has a max width
+---@field max_width fun(w: integer): Constraint
+--- The view has a min size
+---@field min_size fun(w: integer, h: integer): Constraint
+--- The view has a min width
+---@field min_width fun(w: integer): Constraint
+--- The view has a min height
+---@field min_height fun(h: integer): Constraint
+Constraint = { }
 
 ---@enum Label
 Label = {
-    ---  The default style
-    default = 0,
-    ---  Denotes this label is for information
-    info    = 1,
-    ---  Denotes this label is for warning
-    warning = 2,
-    ---  Denotes this label is for success
-    success = 3,
-    ---  Denotes this label is for danger
-    danger  = 4,
+    --- The default style
+    default = Label,
+    --- Denotes this label is for information
+    info = Label,
+    --- Denotes this label is for warning
+    warning = Label,
+    --- Denotes this label is for success
+    success = Label,
+    --- Denotes this label is for danger
+    danger = Label,
 }
 
 ---@enum Progress
 Progress = {
-    ---  Default style
-    default       = 0,
-    ---  A medium filled style
-    medium_filled = 1,
-    ---  A full filled style
-    filled        = 2,
-    ---  A thin style
-    thin          = 3,
-    ---  A thick style
-    thick         = 4,
-    ---  A thin, but dashed style
-    thin_dashed   = 5,
-    ---  A thick, but dashed style
-    thick_dashed  = 6,
+    --- Default style
+    default = Progress,
+    --- A medium filled style
+    medium_filled = Progress,
+    --- A full filled style
+    filled = Progress,
+    --- A thin style
+    thin = Progress,
+    --- A thick style
+    thick = Progress,
+    --- A thin, but dashed style
+    thin_dashed = Progress,
+    --- A thick, but dashed style
+    thick_dashed = Progress,
 }
 
 ---@enum Selected
 Selected = {
-    ---  The default style
-    default = 0,
-    ---  This element reacts to hovers
-    hovered = 1,
+    --- The default style
+    default = Selected,
+    --- This element reacts to hovers
+    hovered = Selected,
 }
 
 ---@enum Slider
 Slider = {
-    ---  The default style
-    default       = 0,
-    ---  Small track and rounded knob
-    small_rounded = 1,
-    ---  Small track and diamond knob
-    small_diamond = 2,
-    ---  Small track and square knob
-    small_square  = 3,
-    ---  Medium track and large knob
-    large         = 4,
-    ---  Large track and large knob
-    large_filled  = 5,
+    --- The default style
+    default = Slider,
+    --- Small track and rounded knob
+    small_rounded = Slider,
+    --- Small track and diamond knob
+    small_diamond = Slider,
+    --- Small track and square knob
+    small_square = Slider,
+    --- Medium track and large knob
+    large = Slider,
+    --- Large track and large knob
+    large_filled = Slider,
 }
 
 ---@enum Todo
 Todo = {
-    ---  The default style
-    default = 0,
+    --- The default style
+    default = Todo,
 }
 
 ---@enum Toggle
 Toggle = {
-    ---  The default style
-    default       = 0,
-    ---  A large knob
-    large         = 1,
-    ---  A small rounded knob
-    small_rounded = 2,
-    ---  A small diamond knob
-    small_diamond = 3,
-    ---  A small square knob
-    small_square  = 4,
+    --- The default style
+    default = Toggle,
+    --- A large knob
+    large = Toggle,
+    --- A small rounded knob
+    small_rounded = Toggle,
+    --- A small diamond knob
+    small_diamond = Toggle,
+    --- A small square knob
+    small_square = Toggle,
 }
 
----@class AlignParams  Align its children at a specific anchor
----@field align Aligned  Alignment for its children
-AlignParams = {}
+--- Parameter for `ui.aligned`
+---@class (exact) AlignedParams
+--- Alignment for its children
+---@field align Aligned
+AlignedParams = { }
 
----@class BackgroundParams  Applies a background color to this children
----@field background string  The background color for the children
-BackgroundParams = {}
+---@class BackgroundParams
+--- The background color for the children
+---@field background string
+BackgroundParams = { }
 
----@class BorderParams  Border to surround its children
----@field style BorderStyle?  The style of the border
----@field class Border?  The class of the border
----@field border BorderKind  The border to use
-BorderParams = {}
+---@class (exact) BorderParams
+--- The style of the border
+---@field style BorderStyle?
+--- The class of the border
+---@field class Border?
+--- The border to use
+---@field border BorderKind
+BorderParams = { }
 
----@class BorderStyle
----@field title Color?  The frame title color
----@field border Color?  The color of the border
----@field border_focused Color?  The color of the border, when focused
----@field border_hovered Color?  The color of the border, when hovered
-BorderStyle = {}
+---@class (exact) BorderStyle
+--- The frame title color
+---@field title Color?
+--- The color of the border
+---@field border Color?
+--- The color of the border, when focused
+---@field border_focused Color?
+--- The color of the border, when hovered
+---@field border_hovered Color?
+BorderStyle = { }
 
----@class ButtonParams  A button to click
----@field style ButtonStyle?  The style of the button
----@field class Button?  The class of the button
----@field text string  The text of the button
----@field handler fun(): nil  Function to call when the button is clicked
-ButtonParams = {}
+---@class (exact) ButtonParams
+--- The style of the button
+---@field style ButtonStyle?
+--- The class of the button
+---@field class Button?
+--- The text of the button
+---@field text string
+--- Function to call when the button is clicked
+---@field handler fun(): nil
+ButtonParams = { }
 
----@class ButtonStyle
----@field text_color Color?  The button text color
----@field background Color?  The button background color
-ButtonStyle = {}
+---@class (exact) ButtonStyle
+--- The button text color
+---@field text_color Color?
+--- The button background color
+---@field background Color?
+ButtonStyle = { }
 
----@class CheckboxParams  A checkbox to toggle a boolean
----@field style CheckboxStyle?  The style of the checkbox
----@field class Checkbox?  The class of the checkbox
----@field text string  The text of the checkbox
----@field value Value  The state of the checkbox, a boolean
-CheckboxParams = {}
+---@class CheckboxParams
+--- The style of the checkbox
+---@field style CheckboxStyle?
+--- The class of the checkbox
+---@field class Checkbox?
+--- The text of the checkbox
+---@field text string
+--- The state of the checkbox, a boolean
+---@field value Value
+CheckboxParams = { }
 
----@class CheckboxStyle
----@field checked string?  The character to use when checked
----@field unchecked string?  The character to use when unchecked
----@field text_color Color?  The color of the text
----@field hovered_color Color?  The color of the text, when hovered
-CheckboxStyle = {}
+---@class (exact) CheckboxStyle
+--- The character to use when checked
+---@field checked string?
+--- The character to use when unchecked
+---@field unchecked string?
+--- The color of the text
+---@field text_color Color?
+--- The color of the text, when hovered
+---@field hovered_color Color?
+CheckboxStyle = { }
 
----@class ConstrainedParams  Specifically constrain a view
----@field constraint Constraint  The constraint to use
-ConstrainedParams = {}
+---@class ConstrainedParams
+--- The constraint to use
+---@field constraint Constraint
+ConstrainedParams = { }
 
----@class FillParams  Fill the childrens area, with an optional size constraint
----@field background string  Use this color to fill the area
----@field width integer?  Optional width to allocate
----@field height integer?  Optional height to allocate
-FillParams = {}
+---@class (exact) FillParams
+--- Use this color to fill the area
+---@field background string
+--- Optional width to allocate
+---@field width integer?
+--- Optional height to allocate
+---@field height integer?
+FillParams = { }
 
----@class FlexParams  Give a flex constraint to its children
----@field tight number?  Tight constraint (ratio between 0.0 and 1.0)
----@field loose number?  Loose constraint (ratio between 0.0 and 1.0)
-FlexParams = {}
+---@class (exact) FlexParams
+--- Tight constraint (ratio between 0.0 and 1.0)
+---@field tight number?
+--- Loose constraint (ratio between 0.0 and 1.0)
+---@field loose number?
+FlexParams = { }
 
----@class FrameParams  A frame, with a title, to surround its children
----@field style BorderStyle?  The style of the border
----@field class Border?  The class of the border
----@field border BorderKind  The border to use
----@field align Align?  Alignment for the title
----@field title string  A string to place in the title
-FrameParams = {}
+---@class (exact) FrameParams
+--- The style of the border
+---@field style BorderStyle?
+--- The class of the border
+---@field class Border?
+--- The border to use
+---@field border BorderKind
+--- Alignment for the title
+---@field align Align?
+--- A string to place in the title
+---@field title string
+FrameParams = { }
 
----@class ListParams  Horizontal layout of children
----@field axis Axis?  Axis for the list
----@field justify Justify?  Justification for children on the vertical axis
----@field cross_align CrossAlign?  Alignment for children on the horizontal axis
----@field gap integer?  Gap between children
----@field scrollable boolean?  Should this be scrollable?
-ListParams = {}
+---@class (exact) ListParams
+--- Axis for the list
+---@field axis Axis?
+--- Justification for children on the vertical axis
+---@field justify Justify?
+--- Alignment for children on the horizontal axis
+---@field cross_align CrossAlign?
+--- Gap between children
+---@field gap integer?
+--- Should this be scrollable?
+---@field scrollable boolean?
+ListParams = { }
 
----@class LabelParams   Label displays some text
----@field style LabelStyle?  The style of the label
----@field class Label?  The class of the label
----@field text string  The text of the label
-LabelParams  = {}
+---@class (exact) LabelParams
+--- The style of the label
+---@field style LabelStyle?
+--- The class of the label
+---@field class Label?
+--- The text of the label
+---@field text string
+LabelParams = { }
 
----@class LabelStyle
----@field foreground Color?  The foreground text color
----@field italic boolean?  The text should be italic
----@field bold boolean?  The text should be bold
----@field underline boolean?  The text should be underline
----@field faint boolean?  The text should be faint
----@field blink boolean?  The text should be blink
----@field strikeout boolean?  The text should be strikeout
-LabelStyle = {}
+---@class (exact) LabelStyle
+--- The foreground text color
+---@field foreground Color?
+--- The text should be italic
+---@field italic boolean?
+--- The text should be bold
+---@field bold boolean?
+--- The text should be underline
+---@field underline boolean?
+--- The text should be faint
+---@field faint boolean?
+--- The text should be blink
+---@field blink boolean?
+--- The text should be strikeout
+---@field strikeout boolean?
+LabelStyle = { }
 
----@class MarginParams  Margin applies padding to a view
----@field left integer?  Padding to the left of the view
----@field right integer?  Padding to the right of the view
----@field top integer?  Padding to the top of the view
----@field bottom integer?  Padding to the bottom of the view
----@field horizontal integer?  Padding on both left and right of the view
----@field vertical integer?  Padding on both top and bottom of the view
----@field all integer?  Padding on each side of the view
-MarginParams = {}
+---@class (exact) MarginParams
+--- Padding to the left of the view
+---@field left integer?
+--- Padding to the right of the view
+---@field right integer?
+--- Padding to the top of the view
+---@field top integer?
+--- Padding to the bottom of the view
+---@field bottom integer?
+--- Padding on both left and right of the view
+---@field horizontal integer?
+--- Padding on both top and bottom of the view
+---@field vertical integer?
+--- Padding on each side of the view
+---@field all integer?
+MarginParams = { }
 
----@class ProgressParams  A progress bar
----@field style ProgressStyle?  The style of the progress bar
----@field class Progress?  The class of the progress bar
----@field axis Axis?  Axis to use for layout
----@field value Value  The value to use (an f32 in the range of 0.0 ..= 1.0)
-ProgressParams = {}
+---@class (exact) ProgressParams
+--- The style of the progress bar
+---@field style ProgressStyle?
+--- The class of the progress bar
+---@field class Progress?
+--- Axis to use for layout
+---@field axis Axis?
+--- The value to use (an f32 in the range of 0.0 ..= 1.0)
+---@field value Value
+ProgressParams = { }
 
----@class ProgressStyle
----@field unfilled_color Color?  The unfilled color
----@field filled_color Color?  The filled color
----@field unfilled_hovered Color?  The unfilled color, when hovered
----@field filled_hovered Color?  The filled color, when hovered
----@field unfilled string?  The character to use for the unfilled portion
----@field filled string?  The character to use for the filled portion
-ProgressStyle = {}
+---@class (exact) ProgressStyle
+--- The unfilled color
+---@field unfilled_color Color?
+--- The filled color
+---@field filled_color Color?
+--- The unfilled color, when hovered
+---@field unfilled_hovered Color?
+--- The filled color, when hovered
+---@field filled_hovered Color?
+--- The character to use for the unfilled portion
+---@field unfilled string?
+--- The character to use for the filled portion
+---@field filled string?
+ProgressStyle = { }
 
----@class RadioParams  A radio selection over multiple values
----@field current any  The current value -- this gets updated when the radio is changed
----@field choice any  b
----@field text string  a
-RadioParams = {}
+---@class (exact) SelectedParams
+--- The style of the selected value
+---@field style SelectedStyle?
+--- The class of the selected value
+---@field class Selected?
+--- The text of the selected value
+---@field text string
+--- The state of the selected value, a boolean
+---@field value Value
+SelectedParams = { }
 
----@class SelectedParams  A selected boolean value
----@field style SelectedStyle?  The style of the selected value
----@field class Selected?  The class of the selected value
----@field text string  The text of the selected value
----@field value Value  The state of the selected value, a boolean
-SelectedParams = {}
+---@class (exact) SelectedStyle
+--- The background color
+---@field background Color?
+--- The text color
+---@field text_color Color?
+--- The background color, when selected
+---@field selected_background Color?
+--- The text color, when hovered
+---@field hovered_text Color?
+--- The background color, when hovered
+---@field hovered_background Color?
+SelectedStyle = { }
 
----@class SelectedStyle
----@field background Color?  The background color
----@field text_color Color?  The text color
----@field selected_background Color?  The background color, when selected
----@field hovered_text Color?  The text color, when hovered
----@field hovered_background Color?  The background color, when hovered
-SelectedStyle = {}
+---@class (exact) SliderParams
+--- The style of the slider
+---@field style SliderStyle?
+--- The class of the slider
+---@field class Slider?
+--- Axis to use for layout
+---@field axis Axis?
+--- The value to use (an f32 in the range of 0.0 ..= 1.0)
+---@field value Value
+SliderParams = { }
 
----@class SliderParams  A slider to adjust a value
----@field style SliderStyle?  The style of the slider
----@field class Slider?  The class of the slider
----@field axis Axis?  Axis to use for layout
----@field value Value  The value to use (an f32 in the range of 0.0 ..= 1.0)
-SliderParams = {}
+---@class (exact) SliderStyle
+--- The color of the track
+---@field track_color Color?
+--- The color of the knob
+---@field knob_color Color?
+--- The color of the track, when hovered
+---@field track_hovered Color?
+--- The color of the knob, when hovered
+---@field knob_hovered Color?
+--- The character to use for the knob
+---@field knob string?
+--- The character to use for the track
+---@field track string?
+SliderStyle = { }
 
----@class SliderStyle
----@field track_color Color?  The color of the track
----@field knob_color Color?  The color of the knob
----@field track_hovered Color?  The color of the track, when hovered
----@field knob_hovered Color?  The color of the knob, when hovered
----@field knob string?  The character to use for the knob
----@field track string?  The character to use for the track
-SliderStyle = {}
+---@class (exact) TodoParams
+--- The class of the selected value
+---@field class Todo?
+--- The style of the selected value
+---@field style TodoStyle?
+--- The text of the selected value
+---@field text string
+--- The state of the selected value, a boolean
+---@field value Value
+TodoParams = { }
 
----@class TodoParams  A selected value
----@field class Todo?  The class of the selected value
----@field style TodoStyle?  The style of the selected value
----@field text string  The text of the selected value
----@field value Value  The state of the selected value, a boolean
-TodoParams = {}
+---@class (exact) TodoStyle
+--- When selected, the text should be bold
+---@field bold boolean?
+--- When selected, the text should be faint
+---@field faint boolean?
+--- When selected, the text should be italic
+---@field italic boolean?
+--- When selected, the text should be underline
+---@field underline boolean?
+--- When selected, the text should be blink
+---@field blink boolean?
+--- When selected, the text should be reverse
+---@field reverse boolean?
+--- When selected, the text should be strikeout
+---@field strikeout boolean?
+--- The color of the text
+---@field text_color Color?
+--- The color of the text, when hovered
+---@field hovered_color Color?
+TodoStyle = { }
 
----@class TodoStyle
----@field bold boolean?  When selected, the text should be bold
----@field faint boolean?  When selected, the text should be faint
----@field italic boolean?  When selected, the text should be italic
----@field underline boolean?  When selected, the text should be underline
----@field blink boolean?  When selected, the text should be blink
----@field reverse boolean?  When selected, the text should be reverse
----@field strikeout boolean?  When selected, the text should be strikeout
----@field text_color Color?  The color of the text
----@field hovered_color Color?  The color of the text, when hovered
-TodoStyle = {}
+---@class (exact) ToggleParams
+--- The boolean state to use
+---@field value Value
+ToggleParams = { }
 
----@class ToggleParams  Conditionally show or hide a view
----@field value Value  The boolean state to use
-ToggleParams = {}
+---@class (exact) ToggleSwitchParams
+--- The class of the selected value
+---@field class Toggle?
+--- The style of the selected value
+---@field style ToggleSwitchStyle?
+--- The state of the selected value, a boolean
+---@field value Value
+--- Axis for the toggle switch
+---@field axis Axis?
+ToggleSwitchParams = { }
 
----@class ToggleSwitchParams  A switch that is toggled when clicked
----@field class Toggle?  The class of the selected value
----@field style ToggleSwitchStyle?  The style of the selected value
----@field value Value  The state of the selected value, a boolean
----@field axis Axis?  Axis for the toggle switch
-ToggleSwitchParams = {}
+---@class (exact) ToggleSwitchStyle
+--- The character to use for the track
+---@field track string?
+--- The color of the track
+---@field track_color Color?
+--- The color of the track, when hovered
+---@field track_hovered Color?
+--- The character to use for the knob when its "on"
+---@field on_knob string?
+--- The color to use for the knob when its "on"
+---@field on_knob_color Color?
+--- The character to use for the knob when its "off"
+---@field off_knob string?
+--- The color to use for the knob when its "off"
+---@field off_knob_color Color?
+--- The color to use for the knob when its "on" and hovered
+---@field on_knob_hovered Color?
+--- The color to use for the knob when its "off" and hovered
+---@field off_knob_hovered Color?
+ToggleSwitchStyle = { }
 
----@class ToggleSwitchStyle
----@field track string?  The character to use for the track
----@field track_color Color?  The color of the track
----@field track_hovered Color?  The color of the track, when hovered
----@field on_knob string?  The character to use for the knob when its "on"
----@field on_knob_color Color?  The color to use for the knob when its "on"
----@field off_knob string?  The character to use for the knob when its "off"
----@field off_knob_color Color?  The color to use for the knob when its "off"
----@field on_knob_hovered Color?  The color to use for the knob when its "on" and hovered
----@field off_knob_hovered Color?  The color to use for the knob when its "off" and hovered
-ToggleSwitchStyle = {}
-
----@class UnconstrainedParams  Specifically unconstrained a view
----@field horizontal boolean?  Unconstrain the horizontal axis
----@field vertical boolean?  Unconstrain the vertical axis
----@field both boolean?  Unconstrain both axis
-UnconstrainedParams = {}
+---@class (exact) UnconstrainedParams
+--- Unconstrain the horizontal axis
+---@field horizontal boolean?
+--- Unconstrain the vertical axis
+---@field vertical boolean?
+--- Unconstrain both axis
+---@field both boolean?
+UnconstrainedParams = { }
 
 ---@class ui
----@field aligned fun(args: AlignParams): nil  Align its children at a specific anchor
----@field background fun(args: BackgroundParams): nil  Applies a background color to this children
----@field border fun(args: BorderParams): nil  Border to surround its children
----@field button fun(args: ButtonParams): nil  A button to click
----@field center fun(args: any): nil  Center aligns its children
----@field checkbox fun(args: CheckboxParams): nil  A checkbox to toggle a boolean
----@field constrained fun(args: ConstrainedParams): nil  Specifically constrain a view
----@field container fun(args: any): nil  A container that just groups multiple calls into one parent
----@field expand_axis fun(): nil  A view that expands the remainder of the space on the axis
----@field fill fun(args: FillParams): nil  Fill the childrens area, with an optional size constraint
----@field flex fun(args: FlexParams): nil  Give a flex constraint to its children
----@field frame fun(args: FrameParams): nil  A frame, with a title, to surround its children
----@field horizontal fun(args: ListParams): nil  Horizontal layout of children
----@field label fun(args: LabelParams | string | lazy_args): nil  Label displays some text
----@field margin fun(args: MarginParams): nil  Margin applies padding to a view
----@field progress fun(args: ProgressParams): nil  A progress bar
----@field radio fun(args: RadioParams): nil  A radio selection over multiple values
----@field selected fun(args: SelectedParams): nil  A selected boolean value
----@field separator fun(): nil  Separator to divide some area
----@field slider fun(args: SliderParams): nil  A slider to adjust a value
----@field todo_value fun(args: TodoParams): nil  A selected value
----@field toggle fun(args: ToggleParams): nil  Conditionally show or hide a view
----@field toggle_switch fun(args: ToggleSwitchParams): nil  A switch that is toggled when clicked
----@field unconstrained fun(args: UnconstrainedParams): nil  Specifically unconstrained a view
----@field vertical fun(args: ListParams): nil  Vertical layout of children
+---  Align its children at a specific anchor
+---@field aligned fun(args: AlignedParams): nil
+---  Applies a background color to this children
+---@field background fun(args: BackgroundParams): nil
+---  Border to surround its children
+---@field border fun(args: BorderParams): nil
+---  A button to click
+---@field button fun(args: ButtonParams): nil
+---  Center aligns its children
+---@field center fun(args: any): nil
+---  A checkbox to toggle a boolean
+---@field checkbox fun(args: CheckboxParams): nil
+---  Specifically constrain a view
+---@field constrained fun(args: ConstrainedParams): nil
+---  A container that just groups multiple calls into one parent
+---@field container fun(args: any): nil
+---  A view that expands the remainder of the space on the axis
+---@field expand_axis fun(): nil
+---  Fill the childrens area, with an optional size constraint
+---@field fill fun(args: FillParams): nil
+---  Give a flex constraint to its children
+---@field flex fun(args: FlexParams): nil
+---  A frame, with a title, to surround its children
+---@field frame fun(args: FrameParams): nil
+---  Horizontal layout of children
+---@field horizontal fun(args: ListParams): nil
+---  Label displays some text
+---@field label fun(args: LabelParams | string): nil
+---  Margin applies padding to a view
+---@field margin fun(args: MarginParams): nil
+---  A progress bar
+---@field progress fun(args: ProgressParams): nil
+---  A selected boolean value
+---@field selected fun(args: SelectedParams): nil
+---  Separator to divide some area
+---@field separator fun(): nil
+---  A slider to adjust a value
+---@field slider fun(args: SliderParams): nil
+---  A selected value
+---@field todo_value fun(args: TodoParams): nil
+---  Conditionally show or hide a view
+---@field toggle fun(args: ToggleParams): nil
+---  A switch that is toggled when clicked
+---@field toggle_switch fun(args: ToggleSwitchParams): nil
+---  Specifically unconstrained a view
+---@field unconstrained fun(args: UnconstrainedParams): nil
+---  Vertical layout of children
+---@field vertical fun(args: ListParams): nil
 ui = { }
-
 

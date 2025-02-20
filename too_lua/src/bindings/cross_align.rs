@@ -1,24 +1,37 @@
-use crate::make_enum;
+use anno_lua::Anno;
 
-make_enum! {
-    enum CrossAlign is "CrossAlign" {
-        /// Alignment begins at the 'start' of the area
-        Start   = "min"
-        /// Alignment begins at the 'end' of the area
-        End     = "max"
-        /// Alignment is in the middle, extra space is applied before and after
-        Center  = "center"
-        /// The elements stretch to fill the area
-        Stretch = "stretch"
-        /// The elements fill the entire area
-        Fill    = "fill"
-    }
+#[derive(Copy, Clone, Debug, Default, PartialEq, Anno, serde::Deserialize)]
+#[anno(self)]
+pub enum CrossAlign {
+    /// Alignment begins at the 'start' of the area
+    #[anno(name = "min")]
+    #[serde(rename = "min")]
+    #[default]
+    Start,
+
+    /// Alignment begins at the 'end' of the area
+    #[anno(name = "max")]
+    #[serde(rename = "max")]
+    End,
+
+    /// Alignment is in the middle, extra space is applied before and after
+    #[anno(name = "center")]
+    #[serde(rename = "center")]
+    Center,
+
+    /// The elements stretch to fill the area
+    #[anno(name = "stretch")]
+    #[serde(rename = "stretch")]
+    Stretch,
+
+    /// The elements fill the entire area
+    #[anno(name = "fill")]
+    #[serde(rename = "fill")]
+    Fill,
 }
 
-impl Default for CrossAlign {
-    fn default() -> Self {
-        Self::Start
-    }
+register_enum! {
+    CrossAlign is "CrossAlign"
 }
 
 impl From<CrossAlign> for too::layout::CrossAlign {

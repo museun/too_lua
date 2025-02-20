@@ -1,27 +1,35 @@
+use anno_lua::Anno;
 use too::view::{Ui, ViewExt as _};
 
 use crate::{
     bindings::{Align, BorderKind},
-    mapping::{BindingSpec, BindingView},
-    proxy::Params,
-    Context, Mapping,
+    Context, Mapping, Params, Spec, View,
 };
 
 use super::{BorderClass, BorderStyle};
 
-make_struct! {
-    struct FrameParams is "FrameParams" {
-        /// The style of the border
-        style  = Option<BorderStyle> ; "BorderStyle?"
-        /// The class of the border
-        class  = Option<BorderClass> ; "Border?"
-        /// The border to use
-        border = BorderKind          ; "BorderKind"
-        /// Alignment for the title
-        align  = Option<Align>       ; "Align?"
-        /// A string to place in the title
-        title  = String              ; "string"
-    }
+#[derive(Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[anno(exact)]
+pub struct FrameParams {
+    /// The style of the border
+    #[anno(lua_type = "BorderStyle?")]
+    pub style: Option<BorderStyle>,
+
+    /// The class of the border
+    #[anno(lua_type = "Border?")]
+    pub class: Option<BorderClass>,
+
+    /// The border to use
+    #[anno(lua_type = "BorderKind")]
+    pub border: BorderKind,
+
+    /// Alignment for the title
+    #[anno(lua_type = "Align?")]
+    pub align: Option<Align>,
+
+    /// A string to place in the title
+    #[anno(lua_type = "string")]
+    pub title: String,
 }
 
 impl Params<too::views::BorderStyle> for FrameParams {
@@ -39,40 +47,28 @@ impl Params<too::views::BorderStyle> for FrameParams {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Frame;
 
-impl BindingView for Frame {
-    const SPEC: BindingSpec = binding! {
-        /// A frame, with a title, to surround its children
-        "frame" => "FrameParams"
-    };
-
+impl View for Frame {
     type Params = FrameParams;
     type Style = BorderStyle;
 
-    fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        use too::renderer::Border;
+    fn spec() -> Spec {
+        view_spec! {
+            /// A frame, with a title, to surround its children
+            Self {
+                name: "frame",
+                params: "FrameParams"
+            }
+        }
+    }
 
-        let Some(params) = ctx.params::<FrameParams>() else {
+    fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
+        let Some(params) = ctx.params_de::<FrameParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "frame", "params");
         };
 
-        let align = match params.align.unwrap_or(Align::Middle) {
-            Align::Min => too::layout::Align::Min,
-            Align::Middle => too::layout::Align::Center,
-            Align::Max => too::layout::Align::Max,
-        };
-
-        let border = match params.border {
-            BorderKind::Empty => Border::EMPTY,
-            BorderKind::Thin => Border::THIN,
-            BorderKind::ThinWide => Border::THIN_WIDE,
-            BorderKind::Rounded => Border::ROUNDED,
-            BorderKind::Double => Border::DOUBLE,
-            BorderKind::Thick => Border::THICK,
-            BorderKind::ThickTall => Border::THICK_TALL,
-            BorderKind::ThickWide => Border::THICK_WIDE,
-        };
-
-        let view = too::views::frame(border, &params.title).title_align(align);
+        let align = params.align.unwrap_or(Align::Middle);
+        let view = too::views::frame(params.border.into(), &params.title) //
+            .title_align(align.into());
 
         ui.show_children(view.class(params.apply_styling()), |ui| {
             ctx.visit_children(mapping, ui)

@@ -1,23 +1,26 @@
 use too::view::Ui;
 
-use crate::{
-    mapping::{BindingSpec, BindingView},
-    Context, Mapping,
-};
+use crate::{Context, Mapping, None, Spec, View};
 
 use super::ListParams;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vertical;
 
-impl BindingView for Vertical {
-    const SPEC: BindingSpec = binding! {
-        /// Vertical layout of children
-        "vertical" => "ListParams"
-    };
-
+impl View for Vertical {
     type Params = ListParams;
-    type Style = ();
+    // TODO styling
+    type Style = None;
+
+    fn spec() -> Spec {
+        view_spec! {
+            /// Vertical layout of children
+            Self {
+                name: "vertical",
+                params: "ListParams"
+            }
+        }
+    }
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         super::list::list(mapping, ui, ctx, super::Axis::Vertical);

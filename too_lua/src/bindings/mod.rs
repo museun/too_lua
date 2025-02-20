@@ -1,71 +1,104 @@
-use crate::{mapping::BindingView as _, Binding, Indirect};
+use crate::{
+    binding::{Proxy, Register, Spec, View as _},
+    Indirect,
+};
 
 #[doc(hidden)]
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Bindings {
-    bindings: Vec<(Binding, Indirect)>,
-}
-
-impl<'a> IntoIterator for &'a Bindings {
-    type Item = &'a (Binding, Indirect);
-    type IntoIter = std::slice::Iter<'a, (Binding, Indirect)>;
-    fn into_iter(self) -> Self::IntoIter {
-        self.bindings.iter()
-    }
+    pub(crate) bindings: Vec<(Spec, Indirect)>,
+    pub(crate) proxies: Vec<Proxy>,
 }
 
 impl Bindings {
-    const DEFAULT_TOO_BINDINGS: &[(fn() -> Binding, Indirect)] = &[
-        (Aligned::binding, Aligned::view),
-        (Background::binding, Background::view),
-        (Border::binding, Border::view),
-        (Button::binding, Button::view),
-        (Center::binding, Center::view),
-        (Checkbox::binding, Checkbox::view),
-        (Constrained::binding, Constrained::view),
-        (Container::binding, Container::view),
-        (ExpandAxis::binding, ExpandAxis::view),
-        (Fill::binding, Fill::view),
-        (Flex::binding, Flex::view),
-        (Frame::binding, Frame::view),
-        (Horizontal::binding, Horizontal::view),
-        (Label::binding, Label::view),
-        (Margin::binding, Margin::view),
-        (Progress::binding, Progress::view),
-        (Radio::binding, Radio::view),
-        (Selected::binding, Selected::view),
-        (Separator::binding, Separator::view),
-        (Slider::binding, Slider::view),
-        (TodoValue::binding, TodoValue::view),
-        (Toggle::binding, Toggle::view),
-        (ToggleSwitch::binding, ToggleSwitch::view),
-        (Unconstrained::binding, Unconstrained::view),
-        (Vertical::binding, Vertical::view),
+    const DEFAULT_TOO_PROXIES: &[fn() -> Proxy] = &[
+        Value::proxy, //
+        AlignedKind::proxy,
+        Axis::proxy,
+        Align::proxy,
+        CrossAlign::proxy,
+        Justify::proxy,
+        BorderClass::proxy,
+        BorderKind::proxy,
+        ButtonClass::proxy,
+        CheckboxClass::proxy,
+        Constraint::proxy,
+        LabelClass::proxy,
+        ProgressClass::proxy,
+        SelectedClass::proxy,
+        SliderClass::proxy,
+        TodoClass::proxy,
+        ToggleSwitchClass::proxy,
+    ];
+
+    const DEFAULT_TOO_BINDINGS: &[(fn() -> Spec, Indirect)] = &[
+        (Aligned::spec, Aligned::view),
+        (Background::spec, Background::view),
+        (Border::spec, Border::view),
+        (Button::spec, Button::view),
+        (Center::spec, Center::view),
+        (Checkbox::spec, Checkbox::view),
+        (Constrained::spec, Constrained::view),
+        (Container::spec, Container::view),
+        (ExpandAxis::spec, ExpandAxis::view),
+        (Fill::spec, Fill::view),
+        (Flex::spec, Flex::view),
+        (Frame::spec, Frame::view),
+        (Horizontal::spec, Horizontal::view),
+        (Label::spec, Label::view),
+        (Margin::spec, Margin::view),
+        (Progress::spec, Progress::view),
+        // (Radio::spec, Radio::view),
+        (Selected::spec, Selected::view),
+        (Separator::spec, Separator::view),
+        (Slider::spec, Slider::view),
+        (TodoValue::spec, TodoValue::view),
+        (Toggle::spec, Toggle::view),
+        (ToggleSwitch::spec, ToggleSwitch::view),
+        (Unconstrained::spec, Unconstrained::view),
+        (Vertical::spec, Vertical::view),
     ];
 
     pub fn default_bindings() -> Self {
-        Self::default().with_many(
-            Self::DEFAULT_TOO_BINDINGS
-                .iter()
-                .copied()
-                .map(|(binding, view)| (binding(), view)),
-        )
+        Self::default()
+            .with_many_spec(
+                Self::DEFAULT_TOO_BINDINGS
+                    .iter()
+                    .copied()
+                    .map(|(spec, view)| (spec(), view)),
+            )
+            .with_many_proxies(
+                Self::DEFAULT_TOO_PROXIES
+                    .iter()
+                    .copied()
+                    .map(|proxy| proxy()),
+            )
     }
 
-    pub fn with_many(self, many: impl IntoIterator<Item = (Binding, Indirect)>) -> Self {
+    pub fn with_many_spec(self, many: impl IntoIterator<Item = (Spec, Indirect)>) -> Self {
         many.into_iter()
-            .fold(self, |this, (binding, func)| this.with(binding, func))
+            .fold(self, |this, (binding, func)| this.with_spec(binding, func))
     }
 
-    pub fn with(mut self, binding: Binding, value: Indirect) -> Self {
+    pub fn with_spec(mut self, spec: Spec, value: Indirect) -> Self {
         // TODO rfind to de-dupe
-        self.bindings.push((binding, value));
+        self.bindings.push((spec, value));
+        self
+    }
+
+    pub fn with_many_proxies(self, many: impl IntoIterator<Item = Proxy>) -> Self {
+        many.into_iter()
+            .fold(self, |this, proxy| this.with_proxy(proxy))
+    }
+
+    pub fn with_proxy(mut self, proxy: Proxy) -> Self {
+        self.proxies.push(proxy);
         self
     }
 }
 
 mod aligned;
-pub use aligned::{AlignParams, Aligned, AlignedKind};
+pub use aligned::{Aligned, AlignedKind, AlignedParams};
 
 mod background;
 pub use background::{Background, BackgroundParams};
@@ -112,9 +145,6 @@ pub use margin::{Margin, MarginParams};
 mod progress;
 pub use progress::{Progress, ProgressClass, ProgressParams, ProgressStyle};
 
-mod radio;
-pub use radio::{Radio, RadioParams};
-
 mod selected;
 pub use selected::{Selected, SelectedClass, SelectedParams, SelectedStyle};
 
@@ -159,3 +189,10 @@ pub use color::Color;
 
 mod value;
 pub use value::Value;
+
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash, serde::Deserialize)]
+#[serde(untagged)]
+pub enum Either<Left, Right> {
+    Left(Left),
+    Right(Right),
+}

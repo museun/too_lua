@@ -1,6 +1,6 @@
 use std::future::Future;
 
-use too_lua::{Bindings, Proxies};
+use too_lua::Bindings;
 
 fn start<R>(f: impl Future<Output = R> + Send + Sync + 'static) -> R {
     tokio::runtime::Builder::new_multi_thread()
@@ -15,7 +15,6 @@ fn main() -> std::io::Result<()> {
         too_lua::Application::new("./too_lua/examples/hello.lua")
             .reload_keybind('r')
             .with_bindings(Bindings::default_bindings())
-            .with_proxies(Proxies::default_proxies())
             .config(too::RunConfig {
                 debug: too::view::DebugMode::Rolling,
                 debug_anchor: too::layout::Anchor2::LEFT_TOP,

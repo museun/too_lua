@@ -15,7 +15,7 @@ use too::{
 
 use crate::{
     runtime::{RunningTasks, Runtime},
-    Bindings, Context, Errors, Mapping, Notification, Notifications, Proxies, Script, Tree,
+    Bindings, Context, Errors, Mapping, Notification, Notifications, Script, Tree,
 };
 
 pub struct Unit;
@@ -27,7 +27,6 @@ pub struct Application<T = Unit> {
     timeout: Option<Duration>,
     reload: Option<Keybind>,
     config: RunConfig,
-    proxies: Proxies,
     bindings: Bindings,
 }
 
@@ -39,7 +38,6 @@ impl Application<Unit> {
             timeout: None,
             reload: None,
             config: RunConfig::default(),
-            proxies: Proxies::default(),
             bindings: Bindings::default(),
         }
     }
@@ -54,7 +52,6 @@ impl Application<Unit> {
             timeout: self.timeout,
             reload: self.reload,
             config: self.config,
-            proxies: self.proxies,
             bindings: self.bindings,
         }
     }
@@ -79,11 +76,6 @@ where
         self
     }
 
-    pub fn with_proxies(mut self, proxies: Proxies) -> Self {
-        self.proxies = proxies;
-        self
-    }
-
     pub fn with_bindings(mut self, bindings: Bindings) -> Self {
         self.bindings = bindings;
         self
@@ -96,7 +88,7 @@ where
     }
 
     fn run_inner(self) -> std::io::Result<()> {
-        let lua = init_lua(&self.proxies);
+        let lua = init_lua(&self.bindings);
         if let Some(user_data) = self.user_data {
             lua.globals()
                 .set("__USER_STATE", user_data)
@@ -220,10 +212,12 @@ where
     }
 }
 
-fn init_lua(proxies: &Proxies) -> mlua::Lua {
+fn init_lua(bindings: &Bindings) -> mlua::Lua {
     let lua = mlua::Lua::new();
     lua.set_app_data(Tree::new(&lua).unwrap());
     lua.set_app_data(RunningTasks::default());
+
+    let globals = lua.globals();
 
     let lazy = lua
         .create_function(|lua, data: mlua::Table| {
@@ -232,18 +226,18 @@ fn init_lua(proxies: &Proxies) -> mlua::Lua {
             Ok(())
         })
         .unwrap();
-    lua.globals().set("lazy", lazy).unwrap();
+    globals.set("lazy", lazy).unwrap();
 
     let debug = mlua::Function::wrap(|data: String| {
         debug(data);
         Ok(())
     });
-    lua.globals().set("debug", debug).unwrap();
+    globals.set("debug", debug).unwrap();
 
-    let require = lua.globals().get::<mlua::Function>("require").unwrap();
+    let require = globals.get::<mlua::Function>("require").unwrap();
 
     let loaded = lua.create_table().unwrap();
-    lua.globals().set("__TOO_LOADED", loaded).unwrap();
+    globals.set("__TOO_LOADED", loaded).unwrap();
 
     let require = lua
         .create_function(move |lua, name: mlua::String| {
@@ -254,13 +248,16 @@ fn init_lua(proxies: &Proxies) -> mlua::Lua {
         })
         .unwrap();
 
-    lua.globals().set("require", require).unwrap();
+    globals.set("require", require).unwrap();
 
-    lua.globals()
+    globals
         .set("rt", lua.create_proxy::<Runtime>().unwrap())
         .unwrap();
 
-    crate::proxy::initialize(proxies, &lua).unwrap();
+    for proxy in &bindings.proxies {
+        (proxy.register)(&globals, &lua).unwrap();
+    }
+
     lua
 }
 

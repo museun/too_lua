@@ -1,23 +1,26 @@
 use too::view::Ui;
 
-use crate::{
-    mapping::{BindingSpec, BindingView},
-    Context, Mapping,
-};
+use crate::{Context, Mapping, None, Spec, View};
 
 use super::ListParams;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Horizontal;
 
-impl BindingView for Horizontal {
-    const SPEC: BindingSpec = binding! {
-        /// Horizontal layout of children
-        "horizontal" => "ListParams"
-    };
-
+impl View for Horizontal {
     type Params = ListParams;
-    type Style = ();
+    // TODO styling
+    type Style = None;
+
+    fn spec() -> Spec {
+        view_spec! {
+            /// Horizontal layout of children
+            Self {
+                name: "horizontal",
+                params: "ListParams"
+            }
+        }
+    }
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         super::list::list(mapping, ui, ctx, super::Axis::Horizontal);

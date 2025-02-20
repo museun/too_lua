@@ -1,18 +1,22 @@
-use crate::make_enum;
+use anno_lua::Anno;
 
-make_enum! {
-    enum Axis is "Axis" {
-        /// The vertical axis
-        Vertical   = "vertical"
-        /// The horizontal axis
-        Horizontal = "horizontal"
-    }
+#[derive(Copy, Clone, Debug, Default, PartialEq, Anno, serde::Deserialize)]
+#[anno(self)]
+pub enum Axis {
+    /// The vertical axis
+    #[anno(name = "vertical")]
+    #[serde(rename = "vertical")]
+    Vertical,
+
+    /// The horizontal axis
+    #[anno(name = "horizontal")]
+    #[serde(rename = "horizontal")]
+    #[default]
+    Horizontal,
 }
 
-impl Default for Axis {
-    fn default() -> Self {
-        Self::Horizontal
-    }
+register_enum! {
+    Axis is "Axis"
 }
 
 impl From<Axis> for too::layout::Axis {

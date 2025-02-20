@@ -1,58 +1,144 @@
-use mlua::AnyUserData;
-use too::view::{Style as _, Ui, ViewExt as _};
+use anno_lua::Anno;
+use mlua::{AnyUserData, FromLua, LuaSerdeExt};
+use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{
-    mapping::{BindingSpec, BindingView},
-    proxy::Params,
-    Context, Mapping,
-};
+use crate::{merge, Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View};
 
 use super::{Axis, Color};
 
-make_class! {
-    class SliderClass is "Slider" ; too::views::SliderStyle {
-        /// The default style
-        Default      = "default"       ; too::views::SliderStyle::default
-        /// Small track and rounded knob
-        SmallRounded = "small_rounded" ; too::views::SliderStyle::small_rounded
-        /// Small track and diamond knob
-        SmallDiamond = "small_diamond" ; too::views::SliderStyle::small_diamond
-        /// Small track and square knob
-        SmallSquare  = "small_square"  ; too::views::SliderStyle::small_square
-        /// Medium track and large knob
-        Large        = "large"         ; too::views::SliderStyle::large
-        /// Large track and large knob
-        LargeFilled  = "large_filled"  ; too::views::SliderStyle::large_filled
+#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[anno(name = "Slider", self)]
+pub enum SliderClass {
+    /// The default style
+    #[anno(name = "default")]
+    #[serde(rename = "default")]
+    Default,
+
+    /// Small track and rounded knob
+    #[anno(name = "small_rounded")]
+    #[serde(rename = "small_rounded")]
+    SmallRounded,
+
+    /// Small track and diamond knob
+    #[anno(name = "small_diamond")]
+    #[serde(rename = "small_diamond")]
+    SmallDiamond,
+
+    /// Small track and square knob
+    #[anno(name = "small_square")]
+    #[serde(rename = "small_square")]
+    SmallSquare,
+
+    /// Medium track and large knob
+    #[anno(name = "large")]
+    #[serde(rename = "large")]
+    Large,
+
+    /// Large track and large knob
+    #[anno(name = "large_filled")]
+    #[serde(rename = "large_filled")]
+    LargeFilled,
+}
+
+register_enum! {
+    SliderClass is "Slider"
+}
+
+impl TranslateClass for SliderClass {
+    type Style = too::views::SliderStyle;
+
+    fn translate(
+        &self,
+        palette: &Palette,
+        options: StyleOptions<<Self::Style as Style>::Args>,
+    ) -> Self::Style {
+        match self {
+            Self::Default => Self::Style::default(palette, options),
+            Self::SmallRounded => Self::Style::small_rounded(palette, options),
+            Self::SmallDiamond => Self::Style::small_diamond(palette, options),
+            Self::SmallSquare => Self::Style::small_square(palette, options),
+            Self::Large => Self::Style::large(palette, options),
+            Self::LargeFilled => Self::Style::large_filled(palette, options),
+        }
     }
 }
 
-make_style! {
-    style SliderStyle is "SliderStyle" ; too::views::SliderStyle {
-        /// The color of the track
-        track_color   = Option<Color>  ; "Color?"
-        /// The color of the knob
-        knob_color    = Option<Color>  ; "Color?"
-        /// The color of the track, when hovered
-        track_hovered = Option<Color>  ; "Color?"
-        /// The color of the knob, when hovered
-        knob_hovered  = Option<Color>  ; "Color?"
-        /// The character to use for the knob
-        knob          = Option<String> ; "string?"
-        /// The character to use for the track
-        track         = Option<String> ; "string?"
+#[derive(Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[anno(exact)]
+pub struct SliderStyle {
+    /// The color of the track
+    #[anno(lua_type = "Color?")]
+    pub track_color: Option<Color>,
+
+    /// The color of the knob
+    #[anno(lua_type = "Color?")]
+    pub knob_color: Option<Color>,
+
+    /// The color of the track, when hovered
+    #[anno(lua_type = "Color?")]
+    pub track_hovered: Option<Color>,
+
+    /// The color of the knob, when hovered
+    #[anno(lua_type = "Color?")]
+    pub knob_hovered: Option<Color>,
+
+    /// The character to use for the knob
+    #[anno(lua_type = "string?")]
+    pub knob: Option<String>,
+
+    /// The character to use for the track
+    #[anno(lua_type = "string?")]
+    pub track: Option<String>,
+}
+
+impl MergeStyle for SliderStyle {
+    type Style = too::views::SliderStyle;
+
+    fn merge_style(&self, style: &mut Self::Style) {
+        merge(&mut style.track_color, &self.track_color);
+        merge(&mut style.knob_color, &self.knob_color);
+        merge(&mut style.track_hovered, &self.track_hovered);
+        merge(&mut style.knob_hovered, &self.knob_hovered);
+        merge(&mut style.knob, &self.knob);
+        merge(&mut style.track, &self.track);
     }
 }
 
-make_struct! {
-    struct SliderParams is "SliderParams" {
-        /// The style of the slider
-        style = Option<SliderStyle> ; "SliderStyle?"
-        /// The class of the slider
-        class = Option<SliderClass> ; "Slider?"
-        /// Axis to use for layout
-        axis  = Option<Axis>        ; "Axis?"
-        /// The value to use (an f32 in the range of 0.0 ..= 1.0)
-        value = AnyUserData         ; "Value"
+#[derive(Clone, Debug, PartialEq, Anno)]
+#[anno(exact)]
+pub struct SliderParams {
+    /// The style of the slider
+    #[anno(lua_type = "SliderStyle?")]
+    pub style: Option<SliderStyle>,
+
+    /// The class of the slider
+    #[anno(lua_type = "Slider?")]
+    pub class: Option<SliderClass>,
+
+    /// Axis to use for layout
+    #[anno(lua_type = "Axis?")]
+    pub axis: Option<Axis>,
+
+    /// The value to use (an f32 in the range of 0.0 ..= 1.0)
+    #[anno(lua_type = "Value")]
+    pub value: AnyUserData,
+}
+
+impl FromLua for SliderParams {
+    fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
+        let mlua::Value::Table(table) = value else {
+            return Err(mlua::Error::runtime(format!(
+                "expected SliderParams, got: {}",
+                value.type_name()
+            )));
+        };
+
+        Ok(Self {
+            style: lua.from_value(table.get("style")?)?,
+            class: lua.from_value(table.get("class")?)?,
+            axis: lua.from_value(table.get("axis")?)?,
+            value: table.get("value")?,
+        })
     }
 }
 
@@ -71,13 +157,19 @@ impl Params<too::views::SliderStyle> for SliderParams {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Slider;
 
-impl BindingView for Slider {
-    const SPEC: BindingSpec = binding! {
-        /// A slider to adjust a value
-        "slider" => "SliderParams"
-    };
+impl View for Slider {
     type Params = SliderParams;
     type Style = SliderStyle;
+
+    fn spec() -> Spec {
+        view_spec! {
+            /// A slider to adjust a value
+            Self {
+                name: "slider",
+                params: "SliderParams"
+            }
+        }
+    }
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
         let Some(params) = ctx.params::<SliderParams>() else {

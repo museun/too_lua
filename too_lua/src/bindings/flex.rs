@@ -1,35 +1,41 @@
+use anno_lua::Anno;
 use too::view::Ui;
 
-use crate::{
-    mapping::{BindingSpec, BindingView},
-    Context, Mapping,
-};
+use crate::{Context, Mapping, None, View};
 
-crate::make_struct! {
-    struct FlexParams is "FlexParams" {
-        /// Tight constraint (ratio between 0.0 and 1.0)
-        tight = Option<f32> ; "number?"
-        /// Loose constraint (ratio between 0.0 and 1.0)
-        loose = Option<f32> ; "number?"
-    }
+#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[anno(exact)]
+pub struct FlexParams {
+    /// Tight constraint (ratio between 0.0 and 1.0)
+    #[anno(lua_type = "number?")]
+    pub tight: Option<f32>,
+
+    /// Loose constraint (ratio between 0.0 and 1.0)
+    #[anno(lua_type = "number?")]
+    pub loose: Option<f32>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Flex;
 
-impl BindingView for Flex {
-    const SPEC: BindingSpec = binding! {
-        /// Give a flex constraint to its children
-        "flex" => "FlexParams"
-    };
-
+impl View for Flex {
     type Params = FlexParams;
-    type Style = ();
+    type Style = None;
+
+    fn spec() -> crate::binding::Spec {
+        view_spec! {
+            /// Give a flex constraint to its children
+            Self {
+                name: "flex",
+                params: "FlexParams"
+            }
+        }
+    }
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         use too::{layout::Flex, views::Flexible};
 
-        let Some(params) = ctx.params::<FlexParams>() else {
+        let Some(params) = ctx.params_de::<FlexParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "flex", "params");
         };
 

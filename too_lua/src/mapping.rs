@@ -12,10 +12,6 @@ use crate::{Bindings, LuaId};
 mod context;
 pub use context::Context;
 
-#[macro_use]
-mod binding;
-pub use binding::{Binding, BindingArgs, BindingParams, BindingSpec, BindingView};
-
 pub type Indirect = fn(&Mapping, &Ui<'_>, Context<'_>);
 
 #[derive(Default)]
@@ -27,8 +23,9 @@ impl Mapping {
     pub fn from_bindings(bindings: Bindings) -> Self {
         Self::default().with_many(
             bindings
+                .bindings
                 .into_iter()
-                .map(|&(binding, func)| (binding.name, func)),
+                .map(|(binding, func)| (binding.name, func)),
         )
     }
 

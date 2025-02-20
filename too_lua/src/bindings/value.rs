@@ -1,9 +1,7 @@
+use anno_lua::Anno;
 use mlua::{AnyUserData, IntoLua as _};
 
-use crate::{
-    proxy::{LuaFunction, Proxy, ProxyKind},
-    LuaType,
-};
+use crate::binding::Register;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
@@ -169,30 +167,38 @@ impl mlua::UserData for Value {
     }
 }
 
-impl LuaType for Value {
+impl Register for Value {
     const NAME: &'static str = "Value";
-    const KIND: ProxyKind = ProxyKind::Value;
-
-    fn lua_functions() -> &'static [LuaFunction] {
-        &[
-            LuaFunction {
-                name: "new fun(value: integer|number|boolean|string): Value",
-                doc: "create a new value",
-            },
-            LuaFunction {
-                name: "persist fun(id: string, value: integer|number|boolean|string): Value",
-                doc: "create a new value, persisted and accessible via `id`",
-            },
-            LuaFunction {
-                name: "destroy fun(id: string): boolean",
-                doc: "destroys a persisted value `id`, if it exists",
-            },
-            LuaFunction {
-                name: "value integer|number|boolean|string",
-                doc: "get the inner value",
-            },
-        ]
-    }
 }
 
-impl Proxy for Value {}
+impl Anno for Value {
+    fn lua_type() -> anno_lua::Type {
+        anno_lua::Type::Class(anno_lua::Class {
+            docs: &["A shared value between lua and rust"],
+            name: "Value",
+            exact: true,
+            fields: &[
+                anno_lua::Field {
+                    name: "new",
+                    ty: "fun(value: integer|number|boolean|string): Value",
+                    docs: &["create a new value"],
+                },
+                anno_lua::Field {
+                    name: "persist",
+                    ty: "fun(id: string, value: integer|number|boolean|string): Value",
+                    docs: &["create a new value, persisted and accessible via `id`"],
+                },
+                anno_lua::Field {
+                    name: "destroy",
+                    ty: "fun(id: string): boolean",
+                    docs: &["destroys a persisted value `id`, if it exists"],
+                },
+                anno_lua::Field {
+                    name: "value",
+                    ty: "integer|number|boolean|string",
+                    docs: &["get the inner value"],
+                },
+            ],
+        })
+    }
+}

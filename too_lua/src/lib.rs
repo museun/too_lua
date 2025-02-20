@@ -1,3 +1,9 @@
+#[macro_use]
+mod binding;
+pub use binding::{
+    Arguments, MergeStyle, None, Params, Proxy, Register, Spec, TranslateClass, View,
+};
+
 mod application;
 pub use application::Application;
 
@@ -8,9 +14,7 @@ mod runtime;
 
 #[macro_use]
 mod mapping;
-pub use mapping::{
-    Binding, BindingArgs, BindingParams, BindingSpec, BindingView, Context, Indirect, Mapping,
-};
+pub use mapping::{Context, Indirect, Mapping};
 
 mod tree;
 pub use tree::{DebugNode, Tree};
@@ -22,16 +26,14 @@ use errors::Errors;
 mod notifications;
 use notifications::{Notification, Notifications};
 
-#[macro_use]
-mod proxy;
-pub use proxy::{
-    generate, proxy, LuaField, LuaFunction, LuaType, MergeStyle, Params, Proxies, Proxy, ProxyKind,
-    ProxyObject, TranslateClass,
-};
-
 pub mod bindings;
 #[doc(inline)]
 pub use bindings::Bindings;
 
 mod extract;
 pub use extract::{merge, Extract};
+
+mod serde;
+
+mod generate;
+pub use generate::generate;

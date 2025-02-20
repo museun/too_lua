@@ -1,10 +1,8 @@
+use anno_lua::Anno;
+use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{
-    mapping::{BindingSpec, BindingView},
-    proxy::{LuaFunction, Proxy, ProxyKind},
-    Context, LuaType, Mapping,
-};
+use crate::{Context, Mapping, None, Register, View};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ConstraintKind {
@@ -31,17 +29,7 @@ impl mlua::FromLua for ConstraintKind {
     }
 }
 
-impl mlua::UserData for ConstraintKind {
-    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_meta_method("__tostring", |lua, this: &Self, ()| {
-            lua.create_string(format!("{this:?}"))
-        });
-
-        methods.add_meta_method("__eq", |_lua, this: &Self, other: Self| {
-            Ok(this == &other) //
-        });
-    }
-}
+impl mlua::UserData for ConstraintKind {}
 
 pub struct Constraint;
 
@@ -72,72 +60,106 @@ impl mlua::UserData for Constraint {
     }
 }
 
-impl LuaType for Constraint {
+impl Register for Constraint {
     const NAME: &'static str = "Constraint";
-    const KIND: ProxyKind = ProxyKind::Value;
+}
 
-    fn lua_functions() -> &'static [LuaFunction] {
-        &[
-            LuaFunction {
-                name: "exact_size fun(w: integer, h: integer): Constraint",
-                doc: "The view has an exact size",
-            },
-            LuaFunction {
-                name: "exact_height fun(h: integer): Constraint",
-                doc: "The view has an exact height",
-            },
-            LuaFunction {
-                name: "exact_width fun(w: integer): Constraint",
-                doc: "The view has an exact width",
-            },
-            LuaFunction {
-                name: "max_size fun(w: integer, h: integer): Constraint",
-                doc: "The view has a max size",
-            },
-            LuaFunction {
-                name: "max_height fun(h: integer): Constraint",
-                doc: "The view has a max height",
-            },
-            LuaFunction {
-                name: "max_width fun(w: integer): Constraint",
-                doc: "The view has a max width",
-            },
-            LuaFunction {
-                name: "min_size fun(w: integer, h: integer): Constraint",
-                doc: "The view has a min size",
-            },
-            LuaFunction {
-                name: "min_width fun(w: integer): Constraint",
-                doc: "The view has a min width",
-            },
-            LuaFunction {
-                name: "min_height fun(h: integer): Constraint",
-                doc: "The view has a min height",
-            },
-        ]
+impl anno_lua::Anno for Constraint {
+    fn lua_type() -> anno_lua::Type {
+        anno_lua::Type::Class(anno_lua::Class {
+            docs: &["A constraint"],
+            name: "Constraint",
+            exact: true,
+            fields: &[
+                anno_lua::Field {
+                    name: "exact_size",
+                    ty: "fun(w: integer, h: integer): Constraint",
+                    docs: &["The view has an exact size"],
+                },
+                anno_lua::Field {
+                    name: "exact_height",
+                    ty: "fun(h: integer): Constraint",
+                    docs: &["The view has an exact height"],
+                },
+                anno_lua::Field {
+                    name: "exact_width",
+                    ty: "fun(w: integer): Constraint",
+                    docs: &["The view has an exact width"],
+                },
+                anno_lua::Field {
+                    name: "max_size",
+                    ty: "fun(w: integer, h: integer): Constraint",
+                    docs: &["The view has a max size"],
+                },
+                anno_lua::Field {
+                    name: "max_height",
+                    ty: "fun(h: integer): Constraint",
+                    docs: &["The view has a max height"],
+                },
+                anno_lua::Field {
+                    name: "max_width",
+                    ty: "fun(w: integer): Constraint",
+                    docs: &["The view has a max width"],
+                },
+                anno_lua::Field {
+                    name: "min_size",
+                    ty: "fun(w: integer, h: integer): Constraint",
+                    docs: &["The view has a min size"],
+                },
+                anno_lua::Field {
+                    name: "min_width",
+                    ty: "fun(w: integer): Constraint",
+                    docs: &["The view has a min width"],
+                },
+                anno_lua::Field {
+                    name: "min_height",
+                    ty: "fun(h: integer): Constraint",
+                    docs: &["The view has a min height"],
+                },
+            ],
+        })
     }
 }
 
-impl Proxy for Constraint {}
+#[derive(Copy, Clone, Debug, PartialEq, Anno)]
+#[anno(extact)]
+pub struct ConstrainedParams {
+    /// The constraint to use
+    #[anno(lua_type = "Constraint")]
+    pub constraint: ConstraintKind,
+}
 
-crate::make_struct! {
-    struct ConstrainedParams is "ConstrainedParams" {
-        /// The constraint to use
-        constraint = ConstraintKind ; "Constraint"
+impl FromLua for ConstrainedParams {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        let mlua::Value::Table(table) = value else {
+            return Err(mlua::Error::runtime(format!(
+                "expected ConstrainedParams, got: {}",
+                value.type_name()
+            )));
+        };
+
+        Ok(Self {
+            constraint: table.get("constraint")?,
+        })
     }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Constrained;
 
-impl BindingView for Constrained {
-    const SPEC: BindingSpec = binding! {
-        /// Specifically constrain a view
-        "constrained" => "ConstrainedParams"
-    };
-
+impl View for Constrained {
     type Params = ConstrainedParams;
-    type Style = ();
+    type Style = None;
+
+    fn spec() -> crate::binding::Spec {
+        view_spec! {
+            /// Specifically constrain a view
+            Self {
+                name: "constrained",
+                params: "ConstrainedParams"
+            }
+        }
+    }
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
         use too::views::Constrain;

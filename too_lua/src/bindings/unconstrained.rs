@@ -1,35 +1,43 @@
+use anno_lua::Anno;
 use too::view::Ui;
 
-use crate::{
-    mapping::{BindingSpec, BindingView},
-    Context, Mapping,
-};
+use crate::{Context, Mapping, None, Spec, View};
 
-make_struct! {
-    struct UnconstrainedParams is "UnconstrainedParams" {
-        /// Unconstrain the horizontal axis
-        horizontal = Option<bool> ; "boolean?"
-        /// Unconstrain the vertical axis
-        vertical = Option<bool> ; "boolean?"
-        /// Unconstrain both axis
-        both = Option<bool> ; "boolean?"
-    }
+#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[anno(exact)]
+pub struct UnconstrainedParams {
+    /// Unconstrain the horizontal axis
+    #[anno(lua_type = "boolean?")]
+    pub horizontal: Option<bool>,
+
+    /// Unconstrain the vertical axis
+    #[anno(lua_type = "boolean?")]
+    pub vertical: Option<bool>,
+
+    /// Unconstrain both axis
+    #[anno(lua_type = "boolean?")]
+    pub both: Option<bool>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Unconstrained;
 
-impl BindingView for Unconstrained {
-    const SPEC: BindingSpec = binding! {
-        /// Specifically unconstrained a view
-        "unconstrained" => "UnconstrainedParams"
-    };
-
+impl View for Unconstrained {
     type Params = UnconstrainedParams;
-    type Style = ();
+    type Style = None;
+
+    fn spec() -> Spec {
+        view_spec! {
+            /// Specifically unconstrained a view
+            Self {
+                name: "unconstrained",
+                params: "UnconstrainedParams"
+            }
+        }
+    }
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.params::<UnconstrainedParams>() else {
+        let Some(params) = ctx.params_de::<UnconstrainedParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "unconstrained", "params");
         };
 

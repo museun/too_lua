@@ -1,68 +1,132 @@
-use mlua::AnyUserData;
-use too::view::{Style, Ui, ViewExt as _};
+use anno_lua::Anno;
+use mlua::{AnyUserData, FromLua, LuaSerdeExt as _};
+use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{
-    mapping::{BindingSpec, BindingView},
-    Context, Mapping,
-};
+use crate::{Context, Mapping, Spec, TranslateClass, View};
 
 use super::Color;
 
-make_class! {
-    class TodoClass is "Todo" ; too::views::TodoStyle {
-        /// The default style
-        Default  = "default" ; too::views::TodoStyle::default
+#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[anno(name = "Todo", self)]
+pub enum TodoClass {
+    /// The default style
+    #[anno(name = "default")]
+    #[serde(rename = "default")]
+    Default,
+}
+
+register_enum! {
+    TodoClass is "Todo"
+}
+
+impl TranslateClass for TodoClass {
+    type Style = too::views::TodoStyle;
+
+    fn translate(
+        &self,
+        palette: &Palette,
+        options: StyleOptions<<Self::Style as Style>::Args>,
+    ) -> Self::Style {
+        match self {
+            Self::Default => Self::Style::default(palette, options),
+        }
     }
 }
 
-make_style! {
-    manual style TodoStyle is "TodoStyle" ; too::views::TodoStyle {
-        /// When selected, the text should be bold
-        bold          = Option<bool> ; "boolean?"
-        /// When selected, the text should be faint
-        faint         = Option<bool> ; "boolean?"
-        /// When selected, the text should be italic
-        italic        = Option<bool> ; "boolean?"
-        /// When selected, the text should be underline
-        underline     = Option<bool> ; "boolean?"
-        /// When selected, the text should be blink
-        blink         = Option<bool> ; "boolean?"
-        /// When selected, the text should be reverse
-        reverse       = Option<bool> ; "boolean?"
-        /// When selected, the text should be strikeout
-        strikeout     = Option<bool> ; "boolean?"
-        //
-        /// The color of the text
-        text_color    = Option<Color> ; "Color?"
-        /// The color of the text, when hovered
-        hovered_color = Option<Color> ; "Color?"
-    }
+#[derive(Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[anno(exact)]
+pub struct TodoStyle {
+    /// When selected, the text should be bold
+    #[anno(lua_type = "boolean?")]
+    pub bold: Option<bool>,
+
+    /// When selected, the text should be faint
+    #[anno(lua_type = "boolean?")]
+    pub faint: Option<bool>,
+
+    /// When selected, the text should be italic
+    #[anno(lua_type = "boolean?")]
+    pub italic: Option<bool>,
+
+    /// When selected, the text should be underline
+    #[anno(lua_type = "boolean?")]
+    pub underline: Option<bool>,
+
+    /// When selected, the text should be blink
+    #[anno(lua_type = "boolean?")]
+    pub blink: Option<bool>,
+
+    /// When selected, the text should be reverse
+    #[anno(lua_type = "boolean?")]
+    pub reverse: Option<bool>,
+
+    /// When selected, the text should be strikeout
+    #[anno(lua_type = "boolean?")]
+    pub strikeout: Option<bool>,
+
+    /// The color of the text
+    #[anno(lua_type = "Color?")]
+    pub text_color: Option<Color>,
+
+    /// The color of the text, when hovered
+    #[anno(lua_type = "Color?")]
+    pub hovered_color: Option<Color>,
 }
 
-make_struct! {
-    struct TodoParams is "TodoParams" {
-        /// The class of the selected value
-        class = Option<TodoClass> ; "Todo?"
-        /// The style of the selected value
-        style = Option<TodoStyle> ; "TodoStyle?"
-        /// The text of the selected value
-        text = String             ; "string"
-        /// The state of the selected value, a boolean
-        value = AnyUserData       ; "Value"
+#[derive(Clone, Debug, PartialEq, Anno)]
+#[anno(exact)]
+pub struct TodoParams {
+    /// The class of the selected value
+    #[anno(lua_type = "Todo?")]
+    pub class: Option<TodoClass>,
+
+    /// The style of the selected value
+    #[anno(lua_type = "TodoStyle?")]
+    pub style: Option<TodoStyle>,
+
+    /// The text of the selected value
+    #[anno(lua_type = "string")]
+    pub text: String,
+
+    /// The state of the selected value, a boolean
+    #[anno(lua_type = "Value")]
+    pub value: AnyUserData,
+}
+
+impl FromLua for TodoParams {
+    fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
+        let mlua::Value::Table(table) = value else {
+            return Err(mlua::Error::runtime(format!(
+                "expected TodoParams, got: {}",
+                value.type_name()
+            )));
+        };
+
+        Ok(Self {
+            style: lua.from_value(table.get("style")?)?,
+            class: lua.from_value(table.get("class")?)?,
+            text: table.get("text")?,
+            value: table.get("value")?,
+        })
     }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct TodoValue;
 
-impl BindingView for TodoValue {
-    const SPEC: BindingSpec = binding! {
-        /// A selected value
-        "todo_value" => "TodoParams"
-    };
-
+impl View for TodoValue {
     type Params = TodoParams;
     type Style = TodoStyle;
+
+    fn spec() -> Spec {
+        view_spec! {
+            /// A selected value
+            Self {
+                name: "todo_value",
+                params: "TodoParams"
+            }
+        }
+    }
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
         let Some(params) = ctx.params::<TodoParams>() else {

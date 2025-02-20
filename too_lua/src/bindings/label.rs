@@ -1,68 +1,127 @@
-use mlua::Either;
-use too::view::{Style, Ui, ViewExt as _};
+use anno_lua::Anno;
+use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
-    bindings::Color,
-    mapping::{BindingSpec, BindingView},
-    Context, Mapping,
+    binding::View,
+    bindings::{Color, Either},
+    Context, Mapping, TranslateClass,
 };
 
-make_class! {
-    class LabelClass is "Label" ; too::views::LabelStyle {
-        /// The default style
-        Default = "default" ; too::views::LabelStyle::default
-        /// Denotes this label is for information
-        Info    = "info"    ; too::views::LabelStyle::info
-        /// Denotes this label is for warning
-        Warning = "warning" ; too::views::LabelStyle::warning
-        /// Denotes this label is for success
-        Success = "success" ; too::views::LabelStyle::success
-        /// Denotes this label is for danger
-        Danger  = "danger"  ; too::views::LabelStyle::danger
+#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[anno(name = "Label", self)]
+pub enum LabelClass {
+    /// The default style
+    #[anno(name = "default")]
+    #[serde(rename = "default")]
+    Default,
+
+    /// Denotes this label is for information
+    #[anno(name = "info")]
+    #[serde(rename = "info")]
+    Info,
+
+    /// Denotes this label is for warning
+    #[anno(name = "warning")]
+    #[serde(rename = "warning")]
+    Warning,
+
+    /// Denotes this label is for success
+    #[anno(name = "success")]
+    #[serde(rename = "success")]
+    Success,
+
+    /// Denotes this label is for danger
+    #[anno(name = "danger")]
+    #[serde(rename = "danger")]
+    Danger,
+}
+
+register_enum! {
+    LabelClass is "Label"
+}
+
+impl TranslateClass for LabelClass {
+    type Style = too::views::LabelStyle;
+
+    fn translate(
+        &self,
+        palette: &Palette,
+        options: StyleOptions<<Self::Style as Style>::Args>,
+    ) -> Self::Style {
+        match self {
+            Self::Default => Self::Style::default(palette, options),
+            Self::Info => Self::Style::info(palette, options),
+            Self::Warning => Self::Style::warning(palette, options),
+            Self::Success => Self::Style::success(palette, options),
+            Self::Danger => Self::Style::danger(palette, options),
+        }
     }
 }
 
-make_style! {
-    manual style LabelStyle is "LabelStyle" ; too::views::LabelStyle {
-        /// The foreground text color
-        foreground = Option<Color> ; "Color?"
-        /// The text should be italic
-        italic     = Option<bool>  ; "boolean?"
-        /// The text should be bold
-        bold       = Option<bool>  ; "boolean?"
-        /// The text should be underline
-        underline  = Option<bool>  ; "boolean?"
-        /// The text should be faint
-        faint      = Option<bool>  ; "boolean?"
-        /// The text should be blink
-        blink      = Option<bool>  ; "boolean?"
-        /// The text should be strikeout
-        strikeout  = Option<bool>  ; "boolean?"
-    }
+#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[anno(exact)]
+pub struct LabelStyle {
+    /// The foreground text color
+    #[anno(lua_type = "Color?")]
+    pub foreground: Option<Color>,
+
+    /// The text should be italic
+    #[anno(lua_type = "boolean?")]
+    pub italic: Option<bool>,
+
+    /// The text should be bold
+    #[anno(lua_type = "boolean?")]
+    pub bold: Option<bool>,
+
+    /// The text should be underline
+    #[anno(lua_type = "boolean?")]
+    pub underline: Option<bool>,
+
+    /// The text should be faint
+    #[anno(lua_type = "boolean?")]
+    pub faint: Option<bool>,
+
+    /// The text should be blink
+    #[anno(lua_type = "boolean?")]
+    pub blink: Option<bool>,
+
+    /// The text should be strikeout
+    #[anno(lua_type = "boolean?")]
+    pub strikeout: Option<bool>,
 }
 
-make_struct! {
-    struct LabelParams is "LabelParams" {
-        /// The style of the label
-        style = Option<LabelStyle> ; "LabelStyle?"
-        /// The class of the label
-        class = Option<LabelClass> ; "Label?"
-        /// The text of the label
-        text = String              ; "string"
-    }
+#[derive(Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[anno(exact)]
+pub struct LabelParams {
+    /// The style of the label
+    #[anno(lua_type = "LabelStyle?")]
+    pub style: Option<LabelStyle>,
+
+    /// The class of the label
+    #[anno(lua_type = "Label?")]
+    pub class: Option<LabelClass>,
+
+    /// The text of the label
+    #[anno(lua_type = "string")]
+    pub text: String,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Label;
 
-impl BindingView for Label {
-    const SPEC: BindingSpec = binding! {
-        /// Label displays some text
-        "label" => "LabelParams | string | lazy_args"
-    };
-
+impl View for Label {
     type Params = LabelParams;
     type Style = LabelStyle;
+
+    fn spec() -> crate::binding::Spec {
+        view_spec! {
+            /// Label displays some text
+            Self {
+                name: "label",
+                params: "LabelParams | string"
+            }
+        }
+    }
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
         use too::{
@@ -73,7 +132,7 @@ impl BindingView for Label {
         type Apply = fn(Label) -> Label;
         type Class = fn(&Palette, StyleOptions) -> LabelStyle;
 
-        let Some(params) = ctx.params::<Either<String, LabelParams>>() else {
+        let Some(params) = ctx.params_de::<Either<String, LabelParams>>() else {
             return Mapping::report_missing_data(ui, ctx.id, "label", "params");
         };
 

@@ -1,37 +1,35 @@
+use anno_lua::Anno;
 use too::view::Ui;
 
 use super::{Axis, CrossAlign, Justify};
 use crate::{Context, Mapping};
 
-make_struct! {
-    struct ListParams is "ListParams" {
-        /// Axis for the list
-        axis        = Option<Axis>       ; "Axis?"
-        /// Justification for children on the vertical axis
-        justify     = Option<Justify>    ; "Justify?"
-        /// Alignment for children on the horizontal axis
-        cross_align = Option<CrossAlign> ; "CrossAlign?"
-        /// Gap between children
-        gap         = Option<u16>        ; "integer?"
-        /// Should this be scrollable?
-        scrollable  = Option<bool>       ; "boolean?"
-    }
-}
+#[derive(Copy, Clone, Debug, PartialEq, Anno, Default, serde::Deserialize)]
+#[anno(exact)]
+pub struct ListParams {
+    /// Axis for the list
+    #[anno(lua_type = "Axis?")]
+    pub axis: Option<Axis>,
 
-impl Default for ListParams {
-    fn default() -> Self {
-        Self {
-            axis: None,
-            justify: None,
-            cross_align: None,
-            gap: None,
-            scrollable: None,
-        }
-    }
+    /// Justification for children on the vertical axis
+    #[anno(lua_type = "Justify?")]
+    pub justify: Option<Justify>,
+
+    /// Alignment for children on the horizontal axis
+    #[anno(lua_type = "CrossAlign?")]
+    pub cross_align: Option<CrossAlign>,
+
+    /// Gap between children
+    #[anno(lua_type = "integer?")]
+    pub gap: Option<u16>,
+
+    /// Should this be scrollable?
+    #[anno(lua_type = "boolean?")]
+    pub scrollable: Option<bool>,
 }
 
 pub fn list(mapping: &Mapping, ui: &Ui, ctx: Context, axis: Axis) {
-    let params = ctx.params::<ListParams>().unwrap_or_default();
+    let params = ctx.params_de::<ListParams>().unwrap_or_default();
 
     let list = too::views::list()
         .axis(params.axis.unwrap_or(axis).into())

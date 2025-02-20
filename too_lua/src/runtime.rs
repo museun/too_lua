@@ -1,52 +1,31 @@
 use std::{collections::HashMap, sync::atomic::AtomicU64, time::Duration};
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Kind {
-    Async,
-    Sync,
-}
-
-pub struct Method {
-    pub kind: Kind,
-    pub name: &'static str,
-    pub args: &'static str,
-    pub params: &'static str,
-    pub returns: &'static str,
-    pub doc: &'static str,
-}
-
 pub struct Runtime;
 
-impl Runtime {
-    pub fn lua_bindings() -> &'static [Method] {
-        &[
-            Method {
-                kind: Kind::Async,
-                name: "sleep_ms",
-                args: "millis: integer",
-                params: "millis",
-                returns: "nil",
-                doc: "sleep for `millis`",
-            },
-            Method {
-                kind: Kind::Sync,
-                name: "spawn",
-                args: "task: fun():nil | thread",
-                params: "task",
-                returns: "integer",
-                doc: "spawns an async tasks, returning its id",
-            },
-            Method {
-                kind: Kind::Sync,
-                name: "stop",
-                args: "id: integer?",
-                params: "id",
-                returns: "boolean",
-                doc: "attempts to stop a running task",
-            },
-        ]
-    }
-}
+// Method {
+//     kind: Kind::Async,
+//     name: "sleep_ms",
+//     args: "millis: integer",
+//     params: "millis",
+//     returns: "nil",
+//     doc: "sleep for `millis`",
+// },
+// Method {
+//     kind: Kind::Sync,
+//     name: "spawn",
+//     args: "task: fun():nil | thread",
+//     params: "task",
+//     returns: "integer",
+//     doc: "spawns an async tasks, returning its id",
+// },
+// Method {
+//     kind: Kind::Sync,
+//     name: "stop",
+//     args: "id: integer?",
+//     params: "id",
+//     returns: "boolean",
+//     doc: "attempts to stop a running task",
+// },
 
 impl mlua::UserData for Runtime {
     fn add_methods<M>(methods: &mut M)

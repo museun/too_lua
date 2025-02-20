@@ -1,60 +1,150 @@
-use mlua::AnyUserData;
-use too::view::{Style as _, Ui, ViewExt as _};
+use anno_lua::Anno;
+use mlua::{AnyUserData, FromLua, LuaSerdeExt as _};
+use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{
-    mapping::{BindingSpec, BindingView},
-    proxy::Params,
-    Context, Mapping,
-};
+use crate::{merge, Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View};
 
 use super::{Axis, Color};
 
-make_class! {
-    class ProgressClass is "Progress" ; too::views::ProgressStyle {
-        /// Default style
-        Default      = "default"       ; too::views::ProgressStyle::default
-        /// A medium filled style
-        MediumFilled = "medium_filled" ; too::views::ProgressStyle::medium_filled
-        /// A full filled style
-        Filled       = "filled"        ; too::views::ProgressStyle::filled
-        /// A thin style
-        Thin         = "thin"          ; too::views::ProgressStyle::thin
-        /// A thick style
-        Thick        = "thick"         ; too::views::ProgressStyle::thick
-        /// A thin, but dashed style
-        ThinDashed   = "thin_dashed"   ; too::views::ProgressStyle::thin_dashed
-        /// A thick, but dashed style
-        ThickDashed  = "thick_dashed"  ; too::views::ProgressStyle::thick_dashed
+#[derive(Copy, Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[anno(name = "Progress", self)]
+pub enum ProgressClass {
+    /// Default style
+    #[anno(name = "default")]
+    #[serde(rename = "default")]
+    Default,
+
+    /// A medium filled style
+    #[anno(name = "medium_filled")]
+    #[serde(rename = "medium_filled")]
+    MediumFilled,
+
+    /// A full filled style
+    #[anno(name = "filled")]
+    #[serde(rename = "filled")]
+    Filled,
+
+    /// A thin style
+    #[anno(name = "thin")]
+    #[serde(rename = "thin")]
+    Thin,
+
+    /// A thick style
+    #[anno(name = "thick")]
+    #[serde(rename = "thick")]
+    Thick,
+
+    /// A thin, but dashed style
+    #[anno(name = "thin_dashed")]
+    #[serde(rename = "thin_dashed")]
+    ThinDashed,
+
+    /// A thick, but dashed style
+    #[anno(name = "thick_dashed")]
+    #[serde(rename = "thick_dashed")]
+    ThickDashed,
+}
+
+register_enum! {
+    ProgressClass is "Progress"
+}
+
+impl TranslateClass for ProgressClass {
+    type Style = too::views::ProgressStyle;
+
+    fn translate(
+        &self,
+        palette: &Palette,
+        options: StyleOptions<<Self::Style as Style>::Args>,
+    ) -> Self::Style {
+        match self {
+            Self::Default => Self::Style::default(palette, options),
+            Self::MediumFilled => Self::Style::medium_filled(palette, options),
+            Self::Filled => Self::Style::filled(palette, options),
+            Self::Thin => Self::Style::thin(palette, options),
+            Self::Thick => Self::Style::thick(palette, options),
+            Self::ThinDashed => Self::Style::thin_dashed(palette, options),
+            Self::ThickDashed => Self::Style::thick_dashed(palette, options),
+        }
     }
 }
 
-make_style! {
-    style ProgressStyle is "ProgressStyle" ; too::views::ProgressStyle {
-        /// The unfilled color
-        unfilled_color   = Option<Color>  ; "Color?"
-        /// The filled color
-        filled_color     = Option<Color>  ; "Color?"
-        /// The unfilled color, when hovered
-        unfilled_hovered = Option<Color>  ; "Color?"
-        /// The filled color, when hovered
-        filled_hovered   = Option<Color>  ; "Color?"
-        /// The character to use for the unfilled portion
-        unfilled         = Option<String> ; "string?"
-        /// The character to use for the filled portion
-        filled           = Option<String> ; "string?"
+#[derive(Clone, Debug, PartialEq, Anno, serde::Deserialize)]
+#[anno(exact)]
+pub struct ProgressStyle {
+    /// The unfilled color
+    #[anno(lua_type = "Color?")]
+    pub unfilled_color: Option<Color>,
+
+    /// The filled color
+    #[anno(lua_type = "Color?")]
+    pub filled_color: Option<Color>,
+
+    /// The unfilled color, when hovered
+    #[anno(lua_type = "Color?")]
+    pub unfilled_hovered: Option<Color>,
+
+    /// The filled color, when hovered
+    #[anno(lua_type = "Color?")]
+    pub filled_hovered: Option<Color>,
+
+    /// The character to use for the unfilled portion
+    #[anno(lua_type = "string?")]
+    pub unfilled: Option<String>,
+
+    /// The character to use for the filled portion
+    #[anno(lua_type = "string?")]
+    pub filled: Option<String>,
+}
+
+impl MergeStyle for ProgressStyle {
+    type Style = too::views::ProgressStyle;
+
+    fn merge_style(&self, style: &mut Self::Style) {
+        merge(&mut style.unfilled_color, &self.unfilled_color);
+        merge(&mut style.filled_color, &self.filled_color);
+        merge(&mut style.unfilled_hovered, &self.unfilled_hovered);
+        merge(&mut style.filled_hovered, &self.filled_hovered);
+        merge(&mut style.unfilled, &self.unfilled);
+        merge(&mut style.filled, &self.filled);
     }
 }
 
-make_struct! {
-    struct ProgressParams is "ProgressParams" {
-        /// The style of the progress bar
-        style = Option<ProgressStyle> ; "ProgressStyle?"
-        /// The class of the progress bar
-        class = Option<ProgressClass> ; "Progress?"
-        /// Axis to use for layout
-        axis  = Option<Axis>          ; "Axis?"
-        /// The value to use (an f32 in the range of 0.0 ..= 1.0)
-        value = AnyUserData           ; "Value"
+#[derive(Clone, Debug, PartialEq, Anno)]
+#[anno(exact)]
+pub struct ProgressParams {
+    /// The style of the progress bar
+    #[anno(lua_type = "ProgressStyle?")]
+    pub style: Option<ProgressStyle>,
+
+    /// The class of the progress bar
+    #[anno(lua_type = "Progress?")]
+    pub class: Option<ProgressClass>,
+
+    /// Axis to use for layout
+    #[anno(lua_type = "Axis?")]
+    pub axis: Option<Axis>,
+
+    /// The value to use (an f32 in the range of 0.0 ..= 1.0)
+    #[anno(lua_type = "Value")]
+    pub value: AnyUserData,
+}
+
+impl FromLua for ProgressParams {
+    fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
+        let mlua::Value::Table(table) = value else {
+            return Err(mlua::Error::runtime(format!(
+                "expected ProgressParams, got: {}",
+                value.type_name()
+            )));
+        };
+
+        Ok(Self {
+            style: lua.from_value(table.get("style")?)?,
+            class: lua.from_value(table.get("class")?)?,
+            axis: lua.from_value(table.get("axis")?)?,
+            value: table.get("value")?,
+        })
     }
 }
 
@@ -73,21 +163,31 @@ impl Params<too::views::ProgressStyle> for ProgressParams {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Progress;
 
-impl BindingView for Progress {
-    const SPEC: BindingSpec = binding! {
-        /// A progress bar
-        "progress" => "ProgressParams"
-    };
-
+impl View for Progress {
     type Params = ProgressParams;
     type Style = ProgressStyle;
 
+    fn spec() -> Spec {
+        view_spec! {
+            /// A progress bar
+            Self {
+                name: "progress",
+                params: "ProgressParams"
+            }
+        }
+    }
+
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.params::<ProgressParams>() else {
+        let Some(params) = ctx.params::<mlua::Either<AnyUserData, ProgressParams>>() else {
             return Mapping::report_missing_data(ui, ctx.id, "progress", "params");
         };
 
-        let Some(value) = ctx.value_ref(&params.value) else {
+        let (value, params) = match params {
+            mlua::Either::Left(value) => (value, None),
+            mlua::Either::Right(params) => (params.value.clone(), Some(params)),
+        };
+
+        let Some(value) = ctx.value_ref(&value) else {
             return Mapping::report_missing_data(ui, ctx.id, "progress", "value");
         };
 
@@ -95,11 +195,11 @@ impl BindingView for Progress {
             return Mapping::report_missing_data(ui, ctx.id, "progress", "float");
         };
 
-        let axis = params.axis.unwrap_or_default();
-        let view = too::views::progress(*value)
-            .axis(axis.into())
-            .class(params.apply_styling());
-
+        let mut view = too::views::progress(*value);
+        if let Some(params) = params {
+            let axis = params.axis.unwrap_or_default();
+            view = view.axis(axis.into()).class(params.apply_styling());
+        }
         ui.show(view);
     }
 }

@@ -1,6 +1,6 @@
 use std::{borrow::Cow, io::Write as _};
 
-use too_lua::{Bindings, Proxies};
+use too_lua::Bindings;
 
 fn main() -> std::io::Result<()> {
     let task = std::env::args().nth(1);
@@ -36,9 +36,6 @@ fn generate(path: &str) -> std::io::Result<()> {
 
     eprintln!("creating a new default {path}");
 
-    let annotations = too_lua::generate(
-        &Proxies::default_proxies(), //
-        &Bindings::default_bindings(),
-    );
+    let annotations = too_lua::generate(&Bindings::default_bindings());
     writeln!(&mut file, "{annotations}",)
 }
