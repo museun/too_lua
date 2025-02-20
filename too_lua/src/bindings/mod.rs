@@ -48,7 +48,6 @@ impl Bindings {
         (Label::spec, Label::view),
         (Margin::spec, Margin::view),
         (Progress::spec, Progress::view),
-        // (Radio::spec, Radio::view),
         (Selected::spec, Selected::view),
         (Separator::spec, Separator::view),
         (Slider::spec, Slider::view),
