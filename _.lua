@@ -231,7 +231,6 @@ Toggle = {
     small_square = Toggle,
 }
 
---- Parameter for `ui.aligned`
 ---@class (exact) AlignedParams
 --- Alignment for its children
 ---@field align Aligned
@@ -574,23 +573,23 @@ UnconstrainedParams = { }
 ---  Horizontal layout of children
 ---@field horizontal fun(args: ListParams): nil
 ---  Label displays some text
----@field label fun(args: LabelParams | string): nil
+---@field label fun(args: string|LabelParams): nil
 ---  Margin applies padding to a view
 ---@field margin fun(args: MarginParams): nil
 ---  A progress bar
----@field progress fun(args: ProgressParams): nil
+---@field progress fun(args: Value|ProgressParams): nil
 ---  A selected boolean value
 ---@field selected fun(args: SelectedParams): nil
 ---  Separator to divide some area
 ---@field separator fun(): nil
 ---  A slider to adjust a value
----@field slider fun(args: SliderParams): nil
+---@field slider fun(args: Value|SliderParams): nil
 ---  A selected value
 ---@field todo_value fun(args: TodoParams): nil
 ---  Conditionally show or hide a view
 ---@field toggle fun(args: ToggleParams): nil
 ---  A switch that is toggled when clicked
----@field toggle_switch fun(args: ToggleSwitchParams): nil
+---@field toggle_switch fun(args: Value|ToggleSwitchParams): nil
 ---  Specifically unconstrained a view
 ---@field unconstrained fun(args: UnconstrainedParams): nil
 ---  Vertical layout of children
