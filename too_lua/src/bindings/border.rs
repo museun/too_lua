@@ -3,8 +3,8 @@ use mlua::FromLua;
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
-    binding::View, bindings::Color, helper::get_table, merge, Context, Mapping, MergeStyle, Params,
-    TranslateClass,
+    Context, Mapping, MergeStyle, Params, TranslateClass, binding::View, bindings::Color,
+    helper::get_table, merge,
 };
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Anno)]

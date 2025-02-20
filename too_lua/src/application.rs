@@ -5,17 +5,17 @@ use std::{
 
 use mlua::{MaybeSend, UserData};
 use too::{
+    RunConfig,
     backend::{Backend as _, EventReader, Keybind},
     format_str,
     renderer::Surface,
     term::{Config as TermConfig, Term},
     view::{CroppedSurface, Debug, State},
-    RunConfig,
 };
 
 use crate::{
-    runtime::{RunningTasks, Runtime},
     Bindings, Context, Errors, Mapping, Notification, Notifications, Script, Tree,
+    runtime::{RunningTasks, Runtime},
 };
 
 pub struct Unit;

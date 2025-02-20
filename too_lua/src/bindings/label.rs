@@ -2,7 +2,7 @@ use anno_lua::Anno;
 use mlua::{Either, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{binding::View, bindings::Color, helper::get_table, Context, Mapping, TranslateClass};
+use crate::{Context, Mapping, TranslateClass, binding::View, bindings::Color, helper::get_table};
 
 #[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Label", self)]
@@ -146,7 +146,7 @@ impl View for Label {
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
         use too::{
             view::{Palette, StyleOptions},
-            views::{label, Label, LabelStyle},
+            views::{Label, LabelStyle, label},
         };
 
         type Apply = fn(Label) -> Label;

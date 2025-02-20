@@ -1,7 +1,7 @@
 use mlua::{AnyUserData, FromLua, UserDataRef, UserDataRefMut};
 use too::view::Ui;
 
-use crate::{bindings::Value, LuaId, Node, Tree};
+use crate::{LuaId, Node, Tree, bindings::Value};
 
 use super::Mapping;
 

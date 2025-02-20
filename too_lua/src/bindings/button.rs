@@ -3,7 +3,7 @@ use mlua::FromLua;
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
-    binding::View, helper::get_table, merge, Context, Mapping, MergeStyle, Params, TranslateClass,
+    Context, Mapping, MergeStyle, Params, TranslateClass, binding::View, helper::get_table, merge,
 };
 
 use super::Color;

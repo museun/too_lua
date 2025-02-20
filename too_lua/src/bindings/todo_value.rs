@@ -2,7 +2,7 @@ use anno_lua::Anno;
 use mlua::{AnyUserData, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{helper::get_table, Context, Mapping, Spec, TranslateClass, View};
+use crate::{Context, Mapping, Spec, TranslateClass, View, helper::get_table};
 
 use super::Color;
 

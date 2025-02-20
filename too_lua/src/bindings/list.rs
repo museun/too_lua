@@ -3,7 +3,7 @@ use mlua::FromLua;
 use too::view::Ui;
 
 use super::{Axis, CrossAlign, Justify};
-use crate::{helper::get_table, Context, Mapping};
+use crate::{Context, Mapping, helper::get_table};
 
 #[derive(Copy, Clone, Debug, PartialEq, Anno, Default)]
 #[anno(exact)]

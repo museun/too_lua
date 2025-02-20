@@ -60,7 +60,7 @@ impl mlua::UserData for Runtime {
                 _ => {
                     return Err(mlua::Error::runtime(
                         "only functions or coroutines can be spawned",
-                    ))
+                    ));
                 }
             };
 

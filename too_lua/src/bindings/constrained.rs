@@ -2,7 +2,7 @@ use anno_lua::Anno;
 use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{helper::get_table, Context, Mapping, None, Register, View};
+use crate::{Context, Mapping, None, Register, View, helper::get_table};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ConstraintKind {
@@ -157,8 +157,8 @@ impl View for Constrained {
     }
 
     fn view(mapping: &Mapping, ui: &Ui, ctx: Context) {
-        use too::views::Constrain;
         use ConstraintKind::*;
+        use too::views::Constrain;
 
         let Some(params) = ctx.params::<ConstrainedParams>() else {
             return Mapping::report_missing_data(ui, ctx.id, "constrained", "params");

@@ -5,7 +5,7 @@ use std::{
 
 use mlua::AnyUserData;
 
-use crate::{runtime::RunningTasks, Tree, UiBuilder};
+use crate::{Tree, UiBuilder, runtime::RunningTasks};
 
 pub struct Script {
     path: PathBuf,

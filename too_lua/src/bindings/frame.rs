@@ -3,9 +3,9 @@ use mlua::FromLua;
 use too::view::{Ui, ViewExt as _};
 
 use crate::{
+    Context, Mapping, Params, Spec, View,
     bindings::{Align, BorderKind},
     helper::get_table,
-    Context, Mapping, Params, Spec, View,
 };
 
 use super::{BorderClass, BorderStyle};

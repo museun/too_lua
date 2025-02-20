@@ -1,6 +1,6 @@
 use crate::{
-    binding::{Proxy, Register, Spec, View as _},
     Indirect,
+    binding::{Proxy, Register, Spec, View as _},
 };
 
 #[doc(hidden)]

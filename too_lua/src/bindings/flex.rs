@@ -2,7 +2,7 @@ use anno_lua::Anno;
 use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{helper::get_table, Context, Mapping, None, View};
+use crate::{Context, Mapping, None, View, helper::get_table};
 
 #[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]

@@ -31,7 +31,7 @@ pub mod bindings;
 pub use bindings::Bindings;
 
 mod extract;
-pub use extract::{merge, Extract};
+pub use extract::{Extract, merge};
 
 mod generate;
 pub use generate::generate;

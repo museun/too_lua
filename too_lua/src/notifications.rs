@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use too::{
-    math::{inverse_lerp, lerp, pos2, vec2, Rect},
+    math::{Rect, inverse_lerp, lerp, pos2, vec2},
     renderer::{Pixel, Surface},
     view::{CroppedSurface, Palette},
 };
