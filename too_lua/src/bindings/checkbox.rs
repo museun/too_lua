@@ -3,7 +3,10 @@ use mlua::{AnyUserData, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
-    Context, Mapping, MergeStyle, Params, TranslateClass, binding::View, helper::get_table, merge,
+    Context, Mapping, MergeStyle, Params, TranslateClass,
+    binding::{Spec, View},
+    helper::get_table,
+    merge,
 };
 
 use super::Color;
@@ -139,7 +142,7 @@ impl View for Checkbox {
     type Params = CheckboxParams;
     type Style = CheckboxStyle;
 
-    fn spec() -> crate::binding::Spec {
+    fn spec() -> Spec {
         view_spec! {
             /// A checkbox to toggle a boolean
             Self {

@@ -3,8 +3,11 @@ use mlua::FromLua;
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
-    Context, Mapping, MergeStyle, Params, TranslateClass, binding::View, bindings::Color,
-    helper::get_table, merge,
+    Context, Mapping, MergeStyle, Params, TranslateClass,
+    binding::{Spec, View},
+    bindings::Color,
+    helper::get_table,
+    merge,
 };
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Anno)]
@@ -185,7 +188,7 @@ impl View for Border {
     type Params = BorderParams;
     type Style = BorderStyle;
 
-    fn spec() -> crate::binding::Spec {
+    fn spec() -> Spec {
         view_spec! {
             /// Border to surround its children
             Self {

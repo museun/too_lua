@@ -2,7 +2,7 @@ use anno_lua::Anno;
 use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{Context, Mapping, None, View, helper::get_table};
+use crate::{Context, Mapping, None, View, binding::Spec, helper::get_table};
 
 #[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(exact)]
@@ -34,7 +34,7 @@ impl View for Flex {
     type Params = FlexParams;
     type Style = None;
 
-    fn spec() -> crate::binding::Spec {
+    fn spec() -> Spec {
         view_spec! {
             /// Give a flex constraint to its children
             Self {

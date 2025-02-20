@@ -3,7 +3,10 @@ use mlua::FromLua;
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
-    Context, Mapping, MergeStyle, Params, TranslateClass, binding::View, helper::get_table, merge,
+    Context, Mapping, MergeStyle, Params, TranslateClass,
+    binding::{Spec, View},
+    helper::get_table,
+    merge,
 };
 
 use super::Color;
@@ -136,7 +139,7 @@ impl View for Button {
     type Params = ButtonParams;
     type Style = ButtonStyle;
 
-    fn spec() -> crate::binding::Spec {
+    fn spec() -> Spec {
         view_spec! {
             /// A button to click
             Self {

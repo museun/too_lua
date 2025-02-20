@@ -2,7 +2,7 @@ use anno_lua::Anno;
 use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{Context, Mapping, None, Register, View, helper::get_table};
+use crate::{Context, Mapping, None, Register, View, binding::Spec, helper::get_table};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ConstraintKind {
@@ -146,7 +146,7 @@ impl View for Constrained {
     type Params = ConstrainedParams;
     type Style = None;
 
-    fn spec() -> crate::binding::Spec {
+    fn spec() -> Spec {
         view_spec! {
             /// Specifically constrain a view
             Self {

@@ -2,7 +2,12 @@ use anno_lua::Anno;
 use mlua::{Either, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{Context, Mapping, TranslateClass, binding::View, bindings::Color, helper::get_table};
+use crate::{
+    Context, Mapping, TranslateClass,
+    binding::{Spec, View},
+    bindings::Color,
+    helper::get_table,
+};
 
 #[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Label", self)]
@@ -133,7 +138,7 @@ impl View for Label {
     type Params = LabelParams;
     type Style = LabelStyle;
 
-    fn spec() -> crate::binding::Spec {
+    fn spec() -> Spec {
         view_spec! {
             /// Label displays some text
             Self {

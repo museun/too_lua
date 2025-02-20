@@ -99,10 +99,7 @@ pub trait Register: UserData + 'static {
     where
         Self: Anno,
     {
-        Proxy {
-            ty: Self::lua_type,
-            register: Self::set_proxy,
-        }
+        Proxy::new::<Self>()
     }
 }
 
@@ -110,6 +107,15 @@ pub trait Register: UserData + 'static {
 pub struct Proxy {
     pub ty: fn() -> anno_lua::Type,
     pub register: fn(&mlua::Table, &mlua::Lua) -> mlua::Result<()>,
+}
+
+impl Proxy {
+    pub const fn new<T: Register + Anno>() -> Self {
+        Self {
+            ty: T::lua_type,
+            register: T::set_proxy,
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
