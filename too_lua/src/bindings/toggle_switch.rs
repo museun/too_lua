@@ -1,5 +1,5 @@
 use anno_lua::Anno;
-use mlua::{AnyUserData, FromLua};
+use mlua::{AnyUserData, Either, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
@@ -185,18 +185,22 @@ impl View for ToggleSwitch {
             /// A switch that is toggled when clicked
             Self {
                 name: "toggle_switch",
-                params: "ToggleSwitchParams"
+                params: "Value" | "ToggleSwitchParams"
             }
         }
     }
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        // TODO either
-        let Some(params) = ctx.params::<ToggleSwitchParams>() else {
+        let Some(params) = ctx.params::<Either<AnyUserData, ToggleSwitchParams>>() else {
             return Mapping::report_missing_data(ui, ctx.id, "toggle_switch", "params");
         };
 
-        let Some(mut value) = ctx.value_mut(&params.value) else {
+        let value = match &params {
+            Either::Left(value) => value,
+            Either::Right(params) => &params.value,
+        };
+
+        let Some(mut value) = ctx.value_mut(&value) else {
             return Mapping::report_missing_data(ui, ctx.id, "toggle_switch", "value");
         };
 
@@ -204,11 +208,12 @@ impl View for ToggleSwitch {
             return Mapping::report_missing_data(ui, ctx.id, "toggle_switch", "bool");
         };
 
-        let axis = params.axis.unwrap_or_default();
-        let view = too::views::toggle_switch(value)
-            .axis(axis.into())
-            .class(params.apply_styling());
-
+        let mut view = too::views::toggle_switch(value);
+        if let Either::Right(params) = params {
+            view = view
+                .axis(params.axis.unwrap_or_default().into())
+                .class(params.apply_styling());
+        }
         ui.show(view);
     }
 }

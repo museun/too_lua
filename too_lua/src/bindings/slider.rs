@@ -1,5 +1,5 @@
 use anno_lua::Anno;
-use mlua::{AnyUserData, FromLua};
+use mlua::{AnyUserData, Either, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
@@ -49,7 +49,8 @@ impl TranslateClass for SliderClass {
         options: StyleOptions<<Self::Style as Style>::Args>,
     ) -> Self::Style {
         match self {
-            Self::Default => Self::Style::default(palette, options),
+            // using the rounded default because its a better one
+            Self::Default => Self::Style::small_rounded(palette, options),
             Self::SmallRounded => Self::Style::small_rounded(palette, options),
             Self::SmallDiamond => Self::Style::small_diamond(palette, options),
             Self::SmallSquare => Self::Style::small_square(palette, options),
@@ -172,17 +173,22 @@ impl View for Slider {
             /// A slider to adjust a value
             Self {
                 name: "slider",
-                params: "SliderParams"
+                params: "Value" | "SliderParams"
             }
         }
     }
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.params::<SliderParams>() else {
+        let Some(params) = ctx.params::<Either<AnyUserData, SliderParams>>() else {
             return Mapping::report_missing_data(ui, ctx.id, "slider", "params");
         };
 
-        let Some(mut value) = ctx.value_mut(&params.value) else {
+        let value = match &params {
+            Either::Left(value) => value,
+            Either::Right(params) => &params.value,
+        };
+
+        let Some(mut value) = ctx.value_mut(value) else {
             return Mapping::report_missing_data(ui, ctx.id, "slider", "value");
         };
 
@@ -190,10 +196,13 @@ impl View for Slider {
             return Mapping::report_missing_data(ui, ctx.id, "slider", "float");
         };
 
-        let axis = params.axis.unwrap_or_default();
-        let view = too::views::slider(value)
-            .axis(axis.into())
-            .class(params.apply_styling());
+        let mut view = too::views::slider(value);
+        if let Either::Right(params) = params {
+            view = view
+                .axis(params.axis.unwrap_or_default().into())
+                .class(params.apply_styling());
+        }
+
         ui.show(view);
     }
 }

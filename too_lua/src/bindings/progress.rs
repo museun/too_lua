@@ -1,5 +1,5 @@
 use anno_lua::Anno;
-use mlua::{AnyUserData, FromLua};
+use mlua::{AnyUserData, Either, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
@@ -177,19 +177,19 @@ impl View for Progress {
             /// A progress bar
             Self {
                 name: "progress",
-                params: "ProgressParams"
+                params: "Value" | "ProgressParams"
             }
         }
     }
 
     fn view(_mapping: &Mapping, ui: &Ui, ctx: Context) {
-        let Some(params) = ctx.params::<mlua::Either<AnyUserData, ProgressParams>>() else {
+        let Some(params) = ctx.params::<Either<AnyUserData, ProgressParams>>() else {
             return Mapping::report_missing_data(ui, ctx.id, "progress", "params");
         };
 
-        let (value, params) = match params {
-            mlua::Either::Left(value) => (value, None),
-            mlua::Either::Right(params) => (params.value.clone(), Some(params)),
+        let value = match &params {
+            Either::Left(value) => &value,
+            Either::Right(params) => &params.value,
         };
 
         let Some(value) = ctx.value_ref(&value) else {
@@ -201,9 +201,10 @@ impl View for Progress {
         };
 
         let mut view = too::views::progress(*value);
-        if let Some(params) = params {
-            let axis = params.axis.unwrap_or_default();
-            view = view.axis(axis.into()).class(params.apply_styling());
+        if let Either::Right(params) = params {
+            view = view
+                .axis(params.axis.unwrap_or_default().into())
+                .class(params.apply_styling());
         }
         ui.show(view);
     }

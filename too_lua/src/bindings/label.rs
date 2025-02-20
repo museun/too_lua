@@ -1,5 +1,5 @@
 use anno_lua::Anno;
-use mlua::FromLua;
+use mlua::{Either, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{binding::View, bindings::Color, helper::get_table, Context, Mapping, TranslateClass};
@@ -138,7 +138,7 @@ impl View for Label {
             /// Label displays some text
             Self {
                 name: "label",
-                params: "LabelParams | string"
+                params: "string" | "LabelParams"
             }
         }
     }
@@ -152,16 +152,16 @@ impl View for Label {
         type Apply = fn(Label) -> Label;
         type Class = fn(&Palette, StyleOptions) -> LabelStyle;
 
-        let Some(params) = ctx.params::<mlua::Either<String, LabelParams>>() else {
+        let Some(params) = ctx.params::<Either<String, LabelParams>>() else {
             return Mapping::report_missing_data(ui, ctx.id, "label", "params");
         };
 
         let params = match params {
-            mlua::Either::Left(left) => {
+            Either::Left(left) => {
                 ui.show(label(left));
                 return;
             }
-            mlua::Either::Right(params) => params,
+            Either::Right(params) => params,
         };
 
         let mut label = label(params.text);

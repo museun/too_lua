@@ -13,7 +13,7 @@ impl View for ExpandAxis {
         view_spec! {
             /// A view that expands the remainder of the space on the axis
             Self {
-                name:"expand_axis"
+                name: "expand_axis"
             }
         }
     }
