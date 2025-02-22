@@ -1,7 +1,7 @@
 #[macro_use]
 mod binding;
 pub use binding::{
-    Arguments, MergeStyle, None, Params, Proxy, Register, Spec, TranslateClass, View,
+    Arguments, MergeStyle, None, Params, Proxy, Register, RegisterProxy, Spec, TranslateClass, View,
 };
 
 mod application;
@@ -34,6 +34,8 @@ mod extract;
 pub use extract::{Extract, merge};
 
 mod generate;
-pub use generate::generate;
+pub use generate::{generate, write_annotations};
 
-mod helper;
+pub mod helper;
+
+pub mod builtin;

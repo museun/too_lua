@@ -2,29 +2,27 @@ use anno_lua::Anno;
 use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{Context, Mapping, None, Spec, View, helper::get_table};
+use crate::{Context, Mapping, None, Spec, View, helper::expect_table};
 
 use super::Color;
 
 #[derive(Copy, Clone, Debug, PartialEq, Anno)]
-#[anno(exact)]
+#[anno(exact, guess)]
 pub struct FillParams {
     /// Use this color to fill the area
-    #[anno(lua_type = "string")]
+    #[anno(lua_type = "Color|string")]
     pub background: Color,
 
     /// Optional width to allocate
-    #[anno(lua_type = "integer?")]
     pub width: Option<u16>,
 
     /// Optional height to allocate
-    #[anno(lua_type = "integer?")]
     pub height: Option<u16>,
 }
 
 impl FromLua for FillParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 background: table.get("background")?,
                 width: table.get("width")?,

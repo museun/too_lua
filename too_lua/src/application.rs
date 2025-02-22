@@ -7,7 +7,6 @@ use mlua::{MaybeSend, UserData};
 use too::{
     RunConfig,
     backend::{Backend as _, EventReader, Keybind},
-    format_str,
     renderer::Surface,
     term::{Config as TermConfig, Term},
     view::{CroppedSurface, Debug, State},
@@ -15,7 +14,7 @@ use too::{
 
 use crate::{
     Bindings, Context, Errors, Mapping, Notification, Notifications, Script, Tree,
-    runtime::{RunningTasks, Runtime},
+    runtime::RunningTasks,
 };
 
 pub struct Unit;
@@ -38,7 +37,7 @@ impl Application<Unit> {
             timeout: None,
             reload: None,
             config: RunConfig::default(),
-            bindings: Bindings::default(),
+            bindings: Bindings::default_bindings(),
         }
     }
 
@@ -95,6 +94,8 @@ where
                 .expect("create user state")
         }
 
+        lua.set_app_data(self.config.palette);
+
         // TODO make this fail less hard
         let mut script = match Script::new(self.path, self.timeout, &lua) {
             Ok(script) => script,
@@ -103,11 +104,6 @@ where
                 return Err(std::io::Error::other(err.to_string()));
             }
         };
-
-        if let Err(err) = script.update(&lua) {
-            eprintln!("cannot evaluate script: {err}");
-            return Err(std::io::Error::other(err.to_string()));
-        }
 
         let mapping = Mapping::from_bindings(self.bindings);
 
@@ -135,6 +131,8 @@ where
 
         run_loop(fps, |_fr, dt| {
             state.update(dt);
+
+            lua.set_app_data(*state.palette());
 
             let mut was_manually_reloaded = false;
             let start = Instant::now();
@@ -189,7 +187,7 @@ where
                 should_render = true;
             }
 
-            let _ = lua.app_data_mut::<Tree>().unwrap().evaluate_lazies();
+            lua.app_data_mut::<Tree>().unwrap().evaluate_lazies();
 
             state.build(surface.rect(), |ui| {
                 let tree = lua.app_data_ref::<Tree>().unwrap();
@@ -221,10 +219,7 @@ pub(crate) fn init_lua(bindings: &Bindings) -> mlua::Result<mlua::Lua> {
     lua.set_app_data(RunningTasks::default());
 
     let globals = lua.globals();
-
     globals.set("lazy", lua.create_function(lazy)?)?;
-    globals.set("debug", mlua::Function::wrap(debug))?;
-    globals.set("rt", lua.create_proxy::<Runtime>()?)?;
 
     hook_require(&lua)?;
 
@@ -232,17 +227,20 @@ pub(crate) fn init_lua(bindings: &Bindings) -> mlua::Result<mlua::Lua> {
         (proxy.register)(&globals, &lua)?;
     }
 
-    Ok(lua)
-}
+    for (spec, _) in &bindings.bindings {
+        for proxy in spec.proxies {
+            (proxy.register)(&globals, &lua)?;
+        }
+    }
 
-fn debug(data: mlua::Value) -> mlua::Result<()> {
-    too::debug(format_str!("{data:?}"));
-    Ok(())
+    Ok(lua)
 }
 
 fn lazy(lua: &mlua::Lua, table: mlua::Table) -> mlua::Result<()> {
     let lazy = table.get::<mlua::Function>(1)?;
-    lua.app_data_mut::<Tree>().unwrap().add_lazy(lazy);
+    lua.app_data_mut::<Tree>()
+        .expect("lazy tree 1")
+        .add_lazy(lazy);
     Ok(())
 }
 

@@ -3,10 +3,10 @@ use mlua::FromLua;
 use too::view::Ui;
 
 use super::{Axis, CrossAlign, Justify};
-use crate::{Context, Mapping, helper::get_table};
+use crate::{Context, Mapping, helper::expect_table};
 
 #[derive(Copy, Clone, Debug, PartialEq, Anno, Default)]
-#[anno(exact)]
+#[anno(exact, guess)]
 pub struct ListParams {
     /// Axis for the list
     #[anno(lua_type = "Axis?")]
@@ -21,17 +21,15 @@ pub struct ListParams {
     pub cross_align: Option<CrossAlign>,
 
     /// Gap between children
-    #[anno(lua_type = "integer?")]
     pub gap: Option<u16>,
 
     /// Should this be scrollable?
-    #[anno(lua_type = "boolean?")]
     pub scrollable: Option<bool>,
 }
 
 impl FromLua for ListParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 axis: table.get("axis")?,
                 justify: table.get("justify")?,

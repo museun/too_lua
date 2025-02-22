@@ -1,4 +1,4 @@
-use std::{borrow::Cow, io::Write as _};
+use std::borrow::Cow;
 
 use too_lua::Bindings;
 
@@ -22,20 +22,6 @@ fn main() -> std::io::Result<()> {
 static HELP: &str = "Tasks:
     generate <file_name?>   generates lua annotations";
 
-// TODO use an actual path here
 fn generate(path: &str) -> std::io::Result<()> {
-    if std::fs::rename(path, format!("{path}.bak")).is_ok() {
-        eprintln!("renamed {path} to {path}.bak")
-    }
-
-    let mut file = std::fs::OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(true)
-        .open(path)?;
-
-    eprintln!("creating a new default {path}");
-
-    let annotations = too_lua::generate(&Bindings::default_bindings());
-    writeln!(&mut file, "{annotations}",)
+    too_lua::write_annotations(path, &Bindings::default_bindings())
 }

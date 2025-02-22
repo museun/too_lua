@@ -18,6 +18,8 @@ macro_rules! view_spec {
             args: $crate::binding::Arguments::None,
             params: <<$ty as $crate::binding::View>::Params as anno_lua::Anno>::lua_type,
             style: <<$ty as $crate::binding::View>::Style as anno_lua::Anno>::lua_type,
+            associated: &[],
+            proxies: &[]
         }
     };
 
@@ -34,6 +36,8 @@ macro_rules! view_spec {
             args: $crate::binding::Arguments::Any,
             params: <<$ty as $crate::binding::View>::Params as anno_lua::Anno>::lua_type,
             style: <<$ty as $crate::binding::View>::Style as anno_lua::Anno>::lua_type,
+            associated: &[],
+            proxies: &[]
         }
     };
 
@@ -52,6 +56,8 @@ macro_rules! view_spec {
             ),
             params: <<$ty as $crate::binding::View>::Params as anno_lua::Anno>::lua_type,
             style: <<$ty as $crate::binding::View>::Style as anno_lua::Anno>::lua_type,
+            associated: &[],
+            proxies: &[]
         }
     };
 }
@@ -99,7 +105,24 @@ pub trait Register: UserData + 'static {
     where
         Self: Anno,
     {
-        Proxy::new::<Self>()
+        const { Proxy::new::<Self>() }
+    }
+}
+
+pub trait RegisterProxy {
+    fn proxy<T>(&self) -> mlua::Result<()>
+    where
+        T: Register + Anno,
+    {
+        self.add_proxy(const { Proxy::new::<T>() })
+    }
+
+    fn add_proxy(&self, proxy: Proxy) -> mlua::Result<()>;
+}
+
+impl RegisterProxy for mlua::Lua {
+    fn add_proxy(&self, proxy: Proxy) -> mlua::Result<()> {
+        (proxy.register)(&self.globals(), self)
     }
 }
 
@@ -110,7 +133,10 @@ pub struct Proxy {
 }
 
 impl Proxy {
-    pub const fn new<T: Register + Anno>() -> Self {
+    pub const fn new<T>() -> Self
+    where
+        T: Register + Anno,
+    {
         Self {
             ty: T::lua_type,
             register: T::set_proxy,
@@ -125,6 +151,8 @@ pub struct Spec {
     pub args: Arguments,
     pub style: fn() -> anno_lua::Type,
     pub params: fn() -> anno_lua::Type,
+    pub proxies: &'static [Proxy],
+    pub associated: &'static [fn() -> anno_lua::Type],
 }
 
 impl Spec {
@@ -136,6 +164,16 @@ impl Spec {
     pub fn style(&self) -> Option<anno_lua::Type> {
         let ty = (self.style)();
         Self::is_not_unit(&ty).then_some(ty)
+    }
+
+    pub const fn with_proxies(mut self, proxies: &'static [Proxy]) -> Self {
+        self.proxies = proxies;
+        self
+    }
+
+    pub const fn with_associated(mut self, associated: &'static [fn() -> anno_lua::Type]) -> Self {
+        self.associated = associated;
+        self
     }
 
     fn is_not_unit(ty: &anno_lua::Type) -> bool {

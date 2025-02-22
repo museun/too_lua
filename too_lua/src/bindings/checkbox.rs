@@ -5,7 +5,7 @@ use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 use crate::{
     Context, Mapping, MergeStyle, Params, TranslateClass,
     binding::{Spec, View},
-    helper::get_table,
+    helper::expect_table,
     merge,
 };
 
@@ -48,28 +48,26 @@ impl TranslateClass for CheckboxClass {
 }
 
 #[derive(Clone, Debug, PartialEq, Anno)]
-#[anno(exact)]
+#[anno(exact, guess)]
 pub struct CheckboxStyle {
     /// The character to use when checked
-    #[anno(lua_type = "string?")]
     pub checked: Option<String>,
 
     /// The character to use when unchecked
-    #[anno(lua_type = "string?")]
     pub unchecked: Option<String>,
 
     /// The color of the text
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub text_color: Option<Color>,
 
     /// The color of the text, when hovered
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub hovered_color: Option<Color>,
 }
 
 impl FromLua for CheckboxStyle {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 checked: table.get("checked")?,
                 unchecked: table.get("unchecked")?,
@@ -92,6 +90,7 @@ impl MergeStyle for CheckboxStyle {
 }
 
 #[derive(Clone, Debug, PartialEq, Anno)]
+#[anno(exact, guess)]
 pub struct CheckboxParams {
     /// The style of the checkbox
     #[anno(lua_type = "CheckboxStyle?")]
@@ -102,7 +101,6 @@ pub struct CheckboxParams {
     pub class: Option<CheckboxClass>,
 
     /// The text of the checkbox
-    #[anno(lua_type = "string")]
     pub text: String,
 
     /// The state of the checkbox, a boolean
@@ -112,7 +110,7 @@ pub struct CheckboxParams {
 
 impl FromLua for CheckboxParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 style: table.get("style")?,
                 class: table.get("class")?,

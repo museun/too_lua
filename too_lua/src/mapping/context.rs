@@ -7,7 +7,7 @@ use super::Mapping;
 
 #[derive(Copy, Clone)]
 pub struct Context<'a> {
-    pub(crate) lua: &'a mlua::Lua,
+    pub lua: &'a mlua::Lua,
     pub(crate) tree: &'a Tree,
     pub(crate) current: &'a Node,
     pub(crate) id: LuaId,

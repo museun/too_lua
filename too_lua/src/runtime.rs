@@ -1,39 +1,133 @@
-use std::{collections::HashMap, sync::atomic::AtomicU64, time::Duration};
+use std::{collections::HashMap, sync::atomic::AtomicU64};
+
+use anno_lua::Anno;
+use mlua::{FromLua, UserData};
+
+use crate::Register;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Duration {
+    dur: std::time::Duration,
+}
+
+impl FromLua for Duration {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
+        let mlua::Value::UserData(ud) = value else {
+            return Err(mlua::Error::runtime(format!(
+                "expected Duration, got: {}",
+                value.type_name(),
+            )));
+        };
+        ud.borrow::<Self>().map(|c| *c)
+    }
+}
+
+impl UserData for Duration {
+    fn add_methods<M>(methods: &mut M)
+    where
+        M: mlua::UserDataMethods<Self>,
+    {
+        methods.add_function("from_secs", |_lua, secs: u64| {
+            Ok(Self {
+                dur: std::time::Duration::from_secs(secs),
+            })
+        });
+
+        methods.add_function("from_millis", |_lua, millis: u64| {
+            Ok(Self {
+                dur: std::time::Duration::from_millis(millis),
+            })
+        });
+
+        methods.add_function("from_micros", |_lua, micros: u64| {
+            Ok(Self {
+                dur: std::time::Duration::from_micros(micros),
+            })
+        });
+    }
+}
+
+impl Anno for Duration {
+    fn lua_type() -> anno_lua::Type {
+        anno_lua::Type::Class(anno_lua::Class {
+            exact: true,
+            docs: &["Duration wrapper"],
+            name: "Duration",
+            fields: &[
+                anno_lua::Field {
+                    name: "from_secs",
+                    ty: "fun(secs: integer): Duration",
+                    docs: &["Creates a new duration from seconds"],
+                },
+                anno_lua::Field {
+                    name: "from_millis",
+                    ty: "fun(millis: integer): Duration",
+                    docs: &["Creates a new duration from milliseconds"],
+                },
+                anno_lua::Field {
+                    name: "from_micros",
+                    ty: "fun(micros: integer): Duration",
+                    docs: &["Creates a new duration from microseconds"],
+                },
+            ],
+        })
+    }
+}
+
+impl Register for Duration {
+    const NAME: &'static str = "Duration";
+}
+
+impl From<Duration> for std::time::Duration {
+    fn from(value: Duration) -> Self {
+        value.dur
+    }
+}
 
 pub struct Runtime;
 
-// Method {
-//     kind: Kind::Async,
-//     name: "sleep_ms",
-//     args: "millis: integer",
-//     params: "millis",
-//     returns: "nil",
-//     doc: "sleep for `millis`",
-// },
-// Method {
-//     kind: Kind::Sync,
-//     name: "spawn",
-//     args: "task: fun():nil | thread",
-//     params: "task",
-//     returns: "integer",
-//     doc: "spawns an async tasks, returning its id",
-// },
-// Method {
-//     kind: Kind::Sync,
-//     name: "stop",
-//     args: "id: integer?",
-//     params: "id",
-//     returns: "boolean",
-//     doc: "attempts to stop a running task",
-// },
+impl Register for Runtime {
+    const NAME: &'static str = "Runtime";
+}
+
+impl Anno for Runtime {
+    fn lua_type() -> anno_lua::Type {
+        anno_lua::Type::Class(anno_lua::Class {
+            exact: true,
+            docs: &["An async runtime"],
+            name: "Runtime",
+            fields: &[
+                anno_lua::Field {
+                    name: "sleep",
+                    ty: "fun(dur: Duration): nil",
+                    docs: &["sleeps for a specific duration"],
+                },
+                anno_lua::Field {
+                    name: "spawn",
+                    ty: "fun(task: (fun(): nil) | thread): integer",
+                    docs: &[
+                        "spawns a function or coroutine",
+                        "",
+                        "this returns an id that you can use to stop the task",
+                    ],
+                },
+                anno_lua::Field {
+                    name: "stop",
+                    ty: "fun(integer): boolean",
+                    docs: &["attempts to stop a running task"],
+                },
+            ],
+        })
+    }
+}
 
 impl mlua::UserData for Runtime {
     fn add_methods<M>(methods: &mut M)
     where
         M: mlua::UserDataMethods<Self>,
     {
-        methods.add_async_function("sleep_ms", |_lua, ms: u32| async move {
-            tokio::time::sleep(Duration::from_millis(ms as u64)).await;
+        methods.add_async_function("sleep", |_lua, duration: Duration| async move {
+            tokio::time::sleep(duration.into()).await;
             Ok(())
         });
 

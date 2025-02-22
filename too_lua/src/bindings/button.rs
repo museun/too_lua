@@ -5,7 +5,7 @@ use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 use crate::{
     Context, Mapping, MergeStyle, Params, TranslateClass,
     binding::{Spec, View},
-    helper::get_table,
+    helper::expect_table,
     merge,
 };
 
@@ -60,17 +60,17 @@ impl TranslateClass for ButtonClass {
 #[anno(exact)]
 pub struct ButtonStyle {
     /// The button text color
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub text_color: Option<Color>,
 
     /// The button background color
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub background: Option<Color>,
 }
 
 impl FromLua for ButtonStyle {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 text_color: table.get("text_color")?,
                 background: table.get("background")?,
@@ -88,7 +88,7 @@ impl MergeStyle for ButtonStyle {
 }
 
 #[derive(Clone, Debug, PartialEq, Anno)]
-#[anno(exact)]
+#[anno(exact, guess)]
 pub struct ButtonParams {
     /// The style of the button
     #[anno(lua_type = "ButtonStyle?")]
@@ -99,7 +99,6 @@ pub struct ButtonParams {
     pub class: Option<ButtonClass>,
 
     /// The text of the button
-    #[anno(lua_type = "string")]
     pub text: String,
 
     /// Function to call when the button is clicked
@@ -109,7 +108,7 @@ pub struct ButtonParams {
 
 impl FromLua for ButtonParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 style: table.get("style")?,
                 class: table.get("class")?,

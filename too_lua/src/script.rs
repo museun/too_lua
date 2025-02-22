@@ -33,9 +33,14 @@ impl Script {
         let path: PathBuf = path.into();
         let data = std::fs::read_to_string(&path)?;
 
+        let update: mlua::Function = lua.load(data).eval()?;
+        lua.set_app_data(Tree::new(lua)?);
+        let data = lua.globals().get::<AnyUserData>("__USER_STATE").ok();
+        update.call::<()>((UiBuilder, data))?;
+
         let (tx, events) = std::sync::mpsc::channel();
         Ok(Self {
-            update: lua.load(data).eval()?,
+            update,
             events,
             _handle: timeout.map(|timeout| Self::watch_for_changes(tx, path.clone(), timeout)),
             path,

@@ -2,7 +2,7 @@ use anno_lua::Anno;
 use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{Context, Mapping, None, Register, View, binding::Spec, helper::get_table};
+use crate::{Context, Mapping, None, Register, View, binding::Spec, helper::expect_table};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ConstraintKind {
@@ -131,7 +131,7 @@ pub struct ConstrainedParams {
 
 impl FromLua for ConstrainedParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 constraint: table.get("constraint")?,
             })

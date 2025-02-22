@@ -6,7 +6,7 @@ use crate::{
     Context, Mapping, MergeStyle, Params, TranslateClass,
     binding::{Spec, View},
     bindings::Color,
-    helper::get_table,
+    helper::expect_table,
     merge,
 };
 
@@ -101,19 +101,19 @@ impl TranslateClass for BorderClass {
 #[anno(exact)]
 pub struct BorderStyle {
     /// The frame title color
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub title: Option<Color>,
 
     /// The color of the border
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub border: Option<Color>,
 
     /// The color of the border, when focused
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub border_focused: Option<Color>,
 
     /// The color of the border, when hovered
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub border_hovered: Option<Color>,
 }
 
@@ -130,7 +130,7 @@ impl MergeStyle for BorderStyle {
 
 impl FromLua for BorderStyle {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 title: table.get("title")?,
                 border: table.get("border")?,
@@ -159,7 +159,7 @@ pub struct BorderParams {
 
 impl FromLua for BorderParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 style: table.get("style")?,
                 class: table.get("class")?,

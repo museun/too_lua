@@ -6,7 +6,7 @@ use crate::{
     Context, Mapping, TranslateClass,
     binding::{Spec, View},
     bindings::Color,
-    helper::get_table,
+    helper::expect_table,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Anno)]
@@ -56,40 +56,34 @@ impl TranslateClass for LabelClass {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Anno)]
-#[anno(exact)]
+#[anno(exact, guess)]
 pub struct LabelStyle {
     /// The foreground text color
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub foreground: Option<Color>,
 
     /// The text should be italic
-    #[anno(lua_type = "boolean?")]
     pub italic: Option<bool>,
 
     /// The text should be bold
-    #[anno(lua_type = "boolean?")]
     pub bold: Option<bool>,
 
     /// The text should be underline
-    #[anno(lua_type = "boolean?")]
     pub underline: Option<bool>,
 
     /// The text should be faint
-    #[anno(lua_type = "boolean?")]
     pub faint: Option<bool>,
 
     /// The text should be blink
-    #[anno(lua_type = "boolean?")]
     pub blink: Option<bool>,
 
     /// The text should be strikeout
-    #[anno(lua_type = "boolean?")]
     pub strikeout: Option<bool>,
 }
 
 impl FromLua for LabelStyle {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 foreground: table.get("foreground")?,
                 italic: table.get("italic")?,
@@ -104,7 +98,7 @@ impl FromLua for LabelStyle {
 }
 
 #[derive(Clone, Debug, PartialEq, Anno)]
-#[anno(exact)]
+#[anno(exact, guess)]
 pub struct LabelParams {
     /// The style of the label
     #[anno(lua_type = "LabelStyle?")]
@@ -115,13 +109,12 @@ pub struct LabelParams {
     pub class: Option<LabelClass>,
 
     /// The text of the label
-    #[anno(lua_type = "string")]
     pub text: String,
 }
 
 impl FromLua for LabelParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 style: table.get("style")?,
                 class: table.get("class")?,

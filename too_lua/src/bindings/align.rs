@@ -8,9 +8,9 @@ pub enum Align {
     #[default]
     Min,
 
-    /// Align to the middle of the area
-    #[anno(name = "middle")]
-    Middle,
+    /// Align to the center of the area
+    #[anno(name = "center")]
+    Center,
 
     /// Align to the end of the area
     #[anno(name = "max")]
@@ -25,7 +25,7 @@ impl From<Align> for too::layout::Align {
     fn from(value: Align) -> Self {
         match value {
             Align::Min => Self::Min,
-            Align::Middle => Self::Center,
+            Align::Center => Self::Center,
             Align::Max => Self::Max,
         }
     }

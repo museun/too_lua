@@ -2,20 +2,20 @@ use anno_lua::Anno;
 use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{Context, Mapping, None, Spec, View, helper::get_table};
+use crate::{Context, Mapping, None, Spec, View, helper::expect_table};
 
 use super::Color;
 
 #[derive(Copy, Clone, Debug, PartialEq, Anno)]
 pub struct BackgroundParams {
     /// The background color for the children
-    #[anno(lua_type = "string")]
+    #[anno(lua_type = "Color|string")]
     pub background: Color,
 }
 
 impl FromLua for BackgroundParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 background: table.get("background")?,
             })

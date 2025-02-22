@@ -1,5 +1,3 @@
-use std::future::Future;
-
 use too_lua::Bindings;
 
 fn start<R>(f: impl Future<Output = R> + Send + Sync + 'static) -> R {

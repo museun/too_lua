@@ -3,7 +3,7 @@ use mlua::{AnyUserData, Either, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
-    Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View, helper::get_table, merge,
+    Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View, helper::expect_table, merge,
 };
 
 use super::{Axis, Color};
@@ -68,19 +68,19 @@ impl TranslateClass for ProgressClass {
 #[anno(exact)]
 pub struct ProgressStyle {
     /// The unfilled color
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub unfilled_color: Option<Color>,
 
     /// The filled color
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub filled_color: Option<Color>,
 
     /// The unfilled color, when hovered
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub unfilled_hovered: Option<Color>,
 
     /// The filled color, when hovered
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub filled_hovered: Option<Color>,
 
     /// The character to use for the unfilled portion
@@ -94,7 +94,7 @@ pub struct ProgressStyle {
 
 impl FromLua for ProgressStyle {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 unfilled_color: table.get("unfilled_color")?,
                 filled_color: table.get("filled_color")?,
@@ -142,7 +142,7 @@ pub struct ProgressParams {
 
 impl FromLua for ProgressParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 style: table.get("style")?,
                 class: table.get("class")?,
@@ -188,11 +188,11 @@ impl View for Progress {
         };
 
         let value = match &params {
-            Either::Left(value) => &value,
+            Either::Left(value) => value,
             Either::Right(params) => &params.value,
         };
 
-        let Some(value) = ctx.value_ref(&value) else {
+        let Some(value) = ctx.value_ref(value) else {
             return Mapping::report_missing_data(ui, ctx.id, "progress", "value");
         };
 

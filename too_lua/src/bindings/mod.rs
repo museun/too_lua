@@ -4,7 +4,7 @@ use crate::{
 };
 
 #[doc(hidden)]
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Bindings {
     pub(crate) bindings: Vec<(Spec, Indirect)>,
     pub(crate) proxies: Vec<Proxy>,
@@ -67,6 +67,11 @@ impl Bindings {
                     .map(|(spec, view)| (spec(), view)),
             )
             .with_many_proxies(
+                crate::builtin::BUILTIN //
+                    .iter()
+                    .copied(),
+            )
+            .with_many_proxies(
                 Self::DEFAULT_TOO_PROXIES
                     .iter()
                     .copied()
@@ -79,6 +84,7 @@ impl Bindings {
             .fold(self, |this, (binding, func)| this.with_spec(binding, func))
     }
 
+    // TODO make this less verbose to use
     pub fn with_spec(mut self, spec: Spec, value: Indirect) -> Self {
         // TODO rfind to de-dupe
         self.bindings.push((spec, value));

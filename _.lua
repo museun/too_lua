@@ -1,4 +1,69 @@
----@alias Color string #RGB | #RGBA | #RRGGBB | #RRGGBBAA hex string
+--- lazily evaluates a function
+---@generic T
+---@param args table<fun(): T>
+---@return T
+---@diagnostic disable-next-line: lowercase-global, missing-return
+function lazy(args) end
+
+--- An async runtime
+---@class (exact) Runtime
+--- sleeps for a specific duration
+---@field sleep fun(dur: Duration): nil
+--- spawns a function or coroutine
+--- 
+--- this returns an id that you can use to stop the task
+---@field spawn fun(task: (fun(): nil) | thread): integer
+--- attempts to stop a running task
+---@field stop fun(integer): boolean
+Runtime = { }
+
+--- Duration wrapper
+---@class (exact) Duration
+--- Creates a new duration from seconds
+---@field from_secs fun(secs: integer): Duration
+--- Creates a new duration from milliseconds
+---@field from_millis fun(millis: integer): Duration
+--- Creates a new duration from microseconds
+---@field from_micros fun(micros: integer): Duration
+Duration = { }
+
+---@enum Palette
+Palette = {
+    --- The background color
+    background = Color,
+    --- The foreground color
+    foreground = Color,
+    --- A color close to the background, but more visible
+    surface = Color,
+    --- A color used to outline things.
+    --- 
+    --- This is generally like surface, but even more visible
+    outline = Color,
+    --- A color used to contrast something against the background
+    contrast = Color,
+    --- A color used for a primary action
+    --- 
+    --- e.g. the default interaction color
+    primary = Color,
+    --- A color used for a secondary action
+    --- 
+    --- e.g an interaction color that is different from the primary color
+    secondary = Color,
+    --- A accent color used to differentiate something from a primary and secondary color
+    accent = Color,
+    --- A color representing that something is dangerous
+    danger = Color,
+    --- A color representing that something is successful
+    success = Color,
+    --- A color representing that something is potentially dangerous
+    warning = Color,
+    --- A color representing that something should be noted
+    info = Color,
+}
+
+--- #RGB | #RGBA | #RRGGBB | #RRGGBBAA hex string
+---@class (exact) Color
+Color = { }
 
 --- A shared value between lua and rust
 ---@class (exact) Value
@@ -46,8 +111,8 @@ Axis = {
 Align = {
     --- Align to the start of the area
     min = Align,
-    --- Align to the middle of the area
-    middle = Align,
+    --- Align to the center of the area
+    center = Align,
     --- Align to the end of the area
     max = Align,
 }
@@ -238,7 +303,7 @@ AlignedParams = { }
 
 ---@class BackgroundParams
 --- The background color for the children
----@field background string
+---@field background Color|string
 BackgroundParams = { }
 
 ---@class (exact) BorderParams
@@ -252,13 +317,13 @@ BorderParams = { }
 
 ---@class (exact) BorderStyle
 --- The frame title color
----@field title Color?
+---@field title Color|string?
 --- The color of the border
----@field border Color?
+---@field border Color|string?
 --- The color of the border, when focused
----@field border_focused Color?
+---@field border_focused Color|string?
 --- The color of the border, when hovered
----@field border_hovered Color?
+---@field border_hovered Color|string?
 BorderStyle = { }
 
 ---@class (exact) ButtonParams
@@ -274,12 +339,12 @@ ButtonParams = { }
 
 ---@class (exact) ButtonStyle
 --- The button text color
----@field text_color Color?
+---@field text_color Color|string?
 --- The button background color
----@field background Color?
+---@field background Color|string?
 ButtonStyle = { }
 
----@class CheckboxParams
+---@class (exact) CheckboxParams
 --- The style of the checkbox
 ---@field style CheckboxStyle?
 --- The class of the checkbox
@@ -296,9 +361,9 @@ CheckboxParams = { }
 --- The character to use when unchecked
 ---@field unchecked string?
 --- The color of the text
----@field text_color Color?
+---@field text_color Color|string?
 --- The color of the text, when hovered
----@field hovered_color Color?
+---@field hovered_color Color|string?
 CheckboxStyle = { }
 
 ---@class ConstrainedParams
@@ -308,7 +373,7 @@ ConstrainedParams = { }
 
 ---@class (exact) FillParams
 --- Use this color to fill the area
----@field background string
+---@field background Color|string
 --- Optional width to allocate
 ---@field width integer?
 --- Optional height to allocate
@@ -359,7 +424,7 @@ LabelParams = { }
 
 ---@class (exact) LabelStyle
 --- The foreground text color
----@field foreground Color?
+---@field foreground Color|string?
 --- The text should be italic
 ---@field italic boolean?
 --- The text should be bold
@@ -404,13 +469,13 @@ ProgressParams = { }
 
 ---@class (exact) ProgressStyle
 --- The unfilled color
----@field unfilled_color Color?
+---@field unfilled_color Color|string?
 --- The filled color
----@field filled_color Color?
+---@field filled_color Color|string?
 --- The unfilled color, when hovered
----@field unfilled_hovered Color?
+---@field unfilled_hovered Color|string?
 --- The filled color, when hovered
----@field filled_hovered Color?
+---@field filled_hovered Color|string?
 --- The character to use for the unfilled portion
 ---@field unfilled string?
 --- The character to use for the filled portion
@@ -430,15 +495,15 @@ SelectedParams = { }
 
 ---@class (exact) SelectedStyle
 --- The background color
----@field background Color?
+---@field background Color|string?
 --- The text color
----@field text_color Color?
+---@field text_color Color|string?
 --- The background color, when selected
----@field selected_background Color?
+---@field selected_background Color|string?
 --- The text color, when hovered
----@field hovered_text Color?
+---@field hovered_text Color|string?
 --- The background color, when hovered
----@field hovered_background Color?
+---@field hovered_background Color|string?
 SelectedStyle = { }
 
 ---@class (exact) SliderParams
@@ -454,13 +519,13 @@ SliderParams = { }
 
 ---@class (exact) SliderStyle
 --- The color of the track
----@field track_color Color?
+---@field track_color Color|string?
 --- The color of the knob
----@field knob_color Color?
+---@field knob_color Color|string?
 --- The color of the track, when hovered
----@field track_hovered Color?
+---@field track_hovered Color|string?
 --- The color of the knob, when hovered
----@field knob_hovered Color?
+---@field knob_hovered Color|string?
 --- The character to use for the knob
 ---@field knob string?
 --- The character to use for the track
@@ -494,9 +559,9 @@ TodoParams = { }
 --- When selected, the text should be strikeout
 ---@field strikeout boolean?
 --- The color of the text
----@field text_color Color?
+---@field text_color Color|string?
 --- The color of the text, when hovered
----@field hovered_color Color?
+---@field hovered_color Color|string?
 TodoStyle = { }
 
 ---@class (exact) ToggleParams
@@ -519,21 +584,21 @@ ToggleSwitchParams = { }
 --- The character to use for the track
 ---@field track string?
 --- The color of the track
----@field track_color Color?
+---@field track_color Color|string?
 --- The color of the track, when hovered
----@field track_hovered Color?
+---@field track_hovered Color|string?
 --- The character to use for the knob when its "on"
 ---@field on_knob string?
 --- The color to use for the knob when its "on"
----@field on_knob_color Color?
+---@field on_knob_color Color|string?
 --- The character to use for the knob when its "off"
 ---@field off_knob string?
 --- The color to use for the knob when its "off"
----@field off_knob_color Color?
+---@field off_knob_color Color|string?
 --- The color to use for the knob when its "on" and hovered
----@field on_knob_hovered Color?
+---@field on_knob_hovered Color|string?
 --- The color to use for the knob when its "off" and hovered
----@field off_knob_hovered Color?
+---@field off_knob_hovered Color|string?
 ToggleSwitchStyle = { }
 
 ---@class (exact) UnconstrainedParams

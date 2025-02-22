@@ -3,7 +3,7 @@ use mlua::{AnyUserData, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
-    Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View, helper::get_table, merge,
+    Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View, helper::expect_table, merge,
 };
 
 use super::Color;
@@ -43,29 +43,29 @@ impl TranslateClass for SelectedClass {
 #[anno(exact)]
 pub struct SelectedStyle {
     /// The background color
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub background: Option<Color>,
 
     /// The text color
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub text_color: Option<Color>,
 
     /// The background color, when selected
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub selected_background: Option<Color>,
 
     /// The text color, when hovered
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub hovered_text: Option<Color>,
 
     /// The background color, when hovered
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub hovered_background: Option<Color>,
 }
 
 impl FromLua for SelectedStyle {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 background: table.get("background")?,
                 text_color: table.get("text_color")?,
@@ -90,7 +90,7 @@ impl MergeStyle for SelectedStyle {
 }
 
 #[derive(Clone, Debug, PartialEq, Anno)]
-#[anno(exact)]
+#[anno(exact, guess)]
 pub struct SelectedParams {
     /// The style of the selected value
     #[anno(lua_type = "SelectedStyle?")]
@@ -101,7 +101,6 @@ pub struct SelectedParams {
     pub class: Option<SelectedClass>,
 
     /// The text of the selected value
-    #[anno(lua_type = "string")]
     pub text: String,
 
     /// The state of the selected value, a boolean
@@ -111,7 +110,7 @@ pub struct SelectedParams {
 
 impl FromLua for SelectedParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 style: table.get("style")?,
                 class: table.get("class")?,

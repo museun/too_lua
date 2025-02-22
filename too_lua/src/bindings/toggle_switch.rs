@@ -3,7 +3,7 @@ use mlua::{AnyUserData, Either, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
-    Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View, helper::get_table, merge,
+    Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View, helper::expect_table, merge,
 };
 
 use super::{Axis, Color};
@@ -55,48 +55,45 @@ impl TranslateClass for ToggleSwitchClass {
 }
 
 #[derive(Clone, Debug, PartialEq, Anno)]
-#[anno(exact)]
+#[anno(exact, guess)]
 pub struct ToggleSwitchStyle {
     /// The character to use for the track
-    #[anno(lua_type = "string?")]
     pub track: Option<String>,
 
     /// The color of the track
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub track_color: Option<Color>,
 
     /// The color of the track, when hovered
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub track_hovered: Option<Color>,
 
     /// The character to use for the knob when its "on"
-    #[anno(lua_type = "string?")]
     pub on_knob: Option<String>,
 
     /// The color to use for the knob when its "on"
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub on_knob_color: Option<Color>,
 
     /// The character to use for the knob when its "off"
-    #[anno(lua_type = "string?")]
     pub off_knob: Option<String>,
 
     /// The color to use for the knob when its "off"
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub off_knob_color: Option<Color>,
 
     /// The color to use for the knob when its "on" and hovered
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub on_knob_hovered: Option<Color>,
 
     /// The color to use for the knob when its "off" and hovered
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub off_knob_hovered: Option<Color>,
 }
 
 impl FromLua for ToggleSwitchStyle {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 track: table.get("track")?,
                 track_color: table.get("track_color")?,
@@ -150,7 +147,7 @@ pub struct ToggleSwitchParams {
 
 impl FromLua for ToggleSwitchParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 style: table.get("style")?,
                 class: table.get("class")?,
@@ -200,7 +197,7 @@ impl View for ToggleSwitch {
             Either::Right(params) => &params.value,
         };
 
-        let Some(mut value) = ctx.value_mut(&value) else {
+        let Some(mut value) = ctx.value_mut(value) else {
             return Mapping::report_missing_data(ui, ctx.id, "toggle_switch", "value");
         };
 

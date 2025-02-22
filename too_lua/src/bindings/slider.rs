@@ -3,7 +3,7 @@ use mlua::{AnyUserData, Either, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
 use crate::{
-    Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View, helper::get_table, merge,
+    Context, Mapping, MergeStyle, Params, Spec, TranslateClass, View, helper::expect_table, merge,
 };
 
 use super::{Axis, Color};
@@ -61,36 +61,34 @@ impl TranslateClass for SliderClass {
 }
 
 #[derive(Clone, Debug, PartialEq, Anno)]
-#[anno(exact)]
+#[anno(exact, guess)]
 pub struct SliderStyle {
     /// The color of the track
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub track_color: Option<Color>,
 
     /// The color of the knob
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub knob_color: Option<Color>,
 
     /// The color of the track, when hovered
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub track_hovered: Option<Color>,
 
     /// The color of the knob, when hovered
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub knob_hovered: Option<Color>,
 
     /// The character to use for the knob
-    #[anno(lua_type = "string?")]
     pub knob: Option<String>,
 
     /// The character to use for the track
-    #[anno(lua_type = "string?")]
     pub track: Option<String>,
 }
 
 impl FromLua for SliderStyle {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 track_color: table.get("track_color")?,
                 knob_color: table.get("knob_color")?,
@@ -138,7 +136,7 @@ pub struct SliderParams {
 
 impl FromLua for SliderParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 style: table.get("style")?,
                 class: table.get("class")?,

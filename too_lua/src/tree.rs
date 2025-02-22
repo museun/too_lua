@@ -96,9 +96,7 @@ impl Tree {
 
 impl Tree {
     #[profiling::function]
-    pub(super) fn evaluate_lazies(&mut self) -> bool {
-        let mut seen = false;
-
+    pub(super) fn evaluate_lazies(&mut self) {
         for (&k, v) in &self.lazies {
             match &mut self.map[k].data {
                 mlua::Value::Table(table) => match table.get::<mlua::String>("text") {
@@ -108,7 +106,6 @@ impl Tree {
                         };
                         if text != data {
                             let _ = table.set("text", data);
-                            seen = true;
                         }
                     }
                     _ => {
@@ -121,20 +118,28 @@ impl Tree {
                             | mlua::Value::Integer(_)
                             | mlua::Value::Number(_) => "value",
                             mlua::Value::String(_) => "text",
-                            _ => continue,
+                            _ => {
+                                self.map[k].data = data;
+                                return;
+                            }
                         };
 
                         let _ = table.set(key, data);
-                        seen = true
                     }
                 },
+
+                mlua::Value::UserData(..) => {
+                    let Ok(data) = v.call::<mlua::Value>(()) else {
+                        continue;
+                    };
+                    self.map[k].data = data;
+                }
 
                 this @ mlua::Value::Nil => {
                     let Ok(data) = v.call::<mlua::Value>(()) else {
                         continue;
                     };
                     *this = data;
-                    seen = true;
                 }
 
                 mlua::Value::String(string) => {
@@ -145,7 +150,6 @@ impl Tree {
                         continue;
                     }
                     self.map[k].data = mlua::Value::String(data);
-                    seen = true;
                 }
 
                 mlua::Value::Boolean(bool) => {
@@ -156,7 +160,6 @@ impl Tree {
                         continue;
                     }
                     self.map[k].data = mlua::Value::Boolean(data);
-                    seen = true;
                 }
 
                 mlua::Value::Integer(integer) => {
@@ -167,7 +170,6 @@ impl Tree {
                         continue;
                     }
                     self.map[k].data = mlua::Value::Integer(data);
-                    seen = true;
                 }
 
                 mlua::Value::Number(float) => {
@@ -178,13 +180,11 @@ impl Tree {
                         continue;
                     }
                     self.map[k].data = mlua::Value::Number(data);
-                    seen = true;
                 }
 
                 _ => {}
             }
         }
-        seen
     }
 
     pub(super) fn add_lazy(&mut self, function: mlua::Function) {

@@ -2,7 +2,7 @@ use anno_lua::Anno;
 use mlua::{AnyUserData, FromLua};
 use too::view::{Palette, Style, StyleOptions, Ui, ViewExt as _};
 
-use crate::{Context, Mapping, Spec, TranslateClass, View, helper::get_table};
+use crate::{Context, Mapping, Spec, TranslateClass, View, helper::expect_table};
 
 use super::Color;
 
@@ -33,48 +33,41 @@ impl TranslateClass for TodoClass {
 }
 
 #[derive(Clone, Debug, PartialEq, Anno)]
-#[anno(exact)]
+#[anno(exact, guess)]
 pub struct TodoStyle {
     /// When selected, the text should be bold
-    #[anno(lua_type = "boolean?")]
     pub bold: Option<bool>,
 
     /// When selected, the text should be faint
-    #[anno(lua_type = "boolean?")]
     pub faint: Option<bool>,
 
     /// When selected, the text should be italic
-    #[anno(lua_type = "boolean?")]
     pub italic: Option<bool>,
 
     /// When selected, the text should be underline
-    #[anno(lua_type = "boolean?")]
     pub underline: Option<bool>,
 
     /// When selected, the text should be blink
-    #[anno(lua_type = "boolean?")]
     pub blink: Option<bool>,
 
     /// When selected, the text should be reverse
-    #[anno(lua_type = "boolean?")]
     pub reverse: Option<bool>,
 
     /// When selected, the text should be strikeout
-    #[anno(lua_type = "boolean?")]
     pub strikeout: Option<bool>,
 
     /// The color of the text
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub text_color: Option<Color>,
 
     /// The color of the text, when hovered
-    #[anno(lua_type = "Color?")]
+    #[anno(lua_type = "Color|string?")]
     pub hovered_color: Option<Color>,
 }
 
 impl FromLua for TodoStyle {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 bold: table.get("bold")?,
                 faint: table.get("faint")?,
@@ -91,7 +84,7 @@ impl FromLua for TodoStyle {
 }
 
 #[derive(Clone, Debug, PartialEq, Anno)]
-#[anno(exact)]
+#[anno(exact, guess)]
 pub struct TodoParams {
     /// The class of the selected value
     #[anno(lua_type = "Todo?")]
@@ -102,7 +95,6 @@ pub struct TodoParams {
     pub style: Option<TodoStyle>,
 
     /// The text of the selected value
-    #[anno(lua_type = "string")]
     pub text: String,
 
     /// The state of the selected value, a boolean
@@ -112,7 +104,7 @@ pub struct TodoParams {
 
 impl FromLua for TodoParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 style: table.get("style")?,
                 class: table.get("class")?,

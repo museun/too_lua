@@ -2,7 +2,7 @@ use anno_lua::Anno;
 use mlua::FromLua;
 use too::view::Ui;
 
-use crate::{Context, Mapping, None, Spec, View, helper::get_table};
+use crate::{Context, Mapping, None, Spec, View, helper::expect_table};
 
 #[derive(Copy, Clone, Debug, PartialEq, Anno)]
 #[anno(name = "Aligned", self)]
@@ -74,7 +74,7 @@ pub struct AlignedParams {
 
 impl FromLua for AlignedParams {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        get_table(value, |table| {
+        expect_table(&value, |table| {
             Ok(Self {
                 align: table.get("align")?,
             })
